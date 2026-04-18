@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 const agentsRouter = require('./routes/agents');
+const eventsRouter = require('./routes/events');
+const alertsRouter = require('./routes/alerts');
 
 const app = express();
 app.use(cors());
@@ -12,6 +14,8 @@ app.get('/health', (req, res) => {
 });
 
 app.use('/api/agents', agentsRouter);
+app.use('/api/events', eventsRouter);
+app.use('/api/alerts', alertsRouter);
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
