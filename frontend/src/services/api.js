@@ -9,7 +9,7 @@ export const getAgents = async () => {
   return res.data.data.affected_items;
 };
 
-export const getEvents = async (agentId, limit = 50) => {
-  const res = await api.get(`/events/${agentId}?limit=${limit}`);
-  return res.data.data.affected_items;
+export const getAgentAlerts = async (agentId, limit = 100) => {
+  const res = await api.get(`/events/${agentId}/alerts?limit=${limit}`);
+  return res.data.data;
 };
