@@ -56,6 +56,8 @@ async function searchTempActivity(agentId, filters = {}) {
           { wildcard: { 'syscheck.path': '*\\temp\\*' } },
           { wildcard: { 'syscheck.path': '*\\Temp\\*' } },
           { wildcard: { 'syscheck.path': '*/tmp/*' } },
+          { wildcard: { 'syscheck.path': '*\\windows\\temp\\*\\cleaner\\*' } },
+          { wildcard: { 'syscheck.path': '*\\windows\\temp\\{*}*' } },
         ]
       }
     }

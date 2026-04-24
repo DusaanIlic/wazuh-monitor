@@ -63,21 +63,24 @@ router.get('/view/:filename', (req, res) => {
   res.sendFile(filePath);
 });
 
-// Okini screenshot ručno
 router.post('/trigger/:agentId', async (req, res) => {
   try {
     const { agentId } = req.params;
     const { apiRequest } = require('../services/wazuhApi');
 
-    await apiRequest('put', `/active-response`, {
-      command: 'take-screenshot',
-      arguments: [],
-      agents_list: [agentId]
+    const result = await apiRequest('put', `/active-response?agents_list=${agentId}`, {
+      command: 'take-screenshot0',
+      custom: true,
+      arguments: []
     });
 
-    res.json({ success: true, message: 'Screenshot komanda poslata' });
+    res.json({ success: true, result });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Trigger error:', err.response?.data || err.message);
+    res.status(500).json({ 
+      error: err.message,
+      details: err.response?.data 
+    });
   }
 });
 
