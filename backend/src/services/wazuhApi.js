@@ -22,7 +22,7 @@ async function getToken() {
   return token;
 }
 
-async function apiRequest(method, endpoint, params = {}) {
+async function apiRequest(method, endpoint, data = {}, params = {}) {
   if (!token) await getToken();
   
   try {
@@ -30,18 +30,19 @@ async function apiRequest(method, endpoint, params = {}) {
       method,
       url: `${process.env.WAZUH_API_URL}${endpoint}`,
       params,
+      data,
       headers: { Authorization: `Bearer ${token}` },
       httpsAgent: agent,
     });
     return response.data;
   } catch (err) {
-    
     if (err.response?.status === 401) {
       await getToken();
       const response = await axios({
         method,
         url: `${process.env.WAZUH_API_URL}${endpoint}`,
         params,
+        data,
         headers: { Authorization: `Bearer ${token}` },
         httpsAgent: agent,
       });

@@ -76,11 +76,11 @@ export default function AgentDetails() {
     setTriggeringScreenshot(true);
     try {
       await axios.post(`http://localhost:3001/api/screenshots/trigger/${agentId}`);
-      // Sačekaj 3 sekunde pa osvježi listu
-      setTimeout(() => {
-        fetchScreenshots();
+      // Sačekaj 8 sekundi pa osveži
+      setTimeout(async () => {
+        await fetchScreenshots();
         setTriggeringScreenshot(false);
-      }, 3000);
+      }, 8000);
     } catch (err) {
       console.error('Greška');
       setTriggeringScreenshot(false);
