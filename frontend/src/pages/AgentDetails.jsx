@@ -12,6 +12,7 @@ import InfoIcon from '@mui/icons-material/Info';
 import PersonIcon from '@mui/icons-material/Person';
 import { getAgentAlerts } from '../services/api';
 import { translateAlert, severityConfig, isSystemEvent } from '../utils/eventTranslator';
+import { TablePagination } from '@mui/material';
 
 const severityIcon = {
   critical: <ErrorIcon color="error" />,
@@ -26,6 +27,8 @@ export default function AgentDetails() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [hideSystem, setHideSystem] = useState(true);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
 
   useEffect(() => {
     const fetchAlerts = async () => {
@@ -84,64 +87,72 @@ export default function AgentDetails() {
       <FormControlLabel
         control={<Switch checked={hideSystem} onChange={e => setHideSystem(e.target.checked)} />}
         label="Sakrij sistemske procese (SYSTEM, NT AUTHORITY...)"
+        onChange={e => { setHideSystem(e.target.checked); setPage(0); }}
         sx={{ mb: 2 }}
       />
 
-      {loading && <CircularProgress />}
-      {error && <Alert severity="error">{error}</Alert>}
-
-      {!loading && filtered.length > 0 && (
-        <Paper>
-          <List disablePadding>
-            {filtered.map((alert, i) => {
-              const { msg, severity, user } = alert.translated;
-              const cfg = severityConfig[severity];
-              return (
-                <Box key={i}>
-                  <ListItem sx={{ backgroundColor: cfg.bg }}>
-                    <ListItemIcon sx={{ minWidth: 40 }}>
-                      {severityIcon[severity]}
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={
-                        <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
-                          <Typography fontWeight="bold">{msg}</Typography>
-                          <Chip label={cfg.label} color={cfg.color} size="small" variant="outlined" />
-                          {user && (
-                            <Chip
-                              icon={<PersonIcon />}
-                              label={user}
-                              size="small"
-                              variant="outlined"
-                              color="default"
-                            />
-                          )}
-                        </Box>
-                      }
-                      secondary={
-                        <Box>
-                          {alert.syscheck?.path && (
-                            <Typography variant="caption" color="text.secondary" display="block">
-                              📁 {alert.syscheck.path}
-                            </Typography>
-                          )}
-                          <Typography variant="caption" color="text.secondary">
-                            🕐 {new Date(alert.timestamp).toLocaleString('sr-RS')}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary" sx={{ ml: 2 }}>
-                            Rule: {alert.rule?.id} — {alert.rule?.description}
-                          </Typography>
-                        </Box>
-                      }
-                    />
-                  </ListItem>
-                  {i < filtered.length - 1 && <Divider />}
-                </Box>
-              );
-            })}
-          </List>
-        </Paper>
-      )}
+{!loading && filtered.length > 0 && (
+  <Paper>
+    <List disablePadding>
+      {filtered
+        .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+        .map((alert, i) => {
+          const { msg, severity, user } = alert.translated;
+          const cfg = severityConfig[severity];
+          return (
+            <Box key={i}>
+              <ListItem sx={{ backgroundColor: cfg.bg }}>
+                <ListItemIcon sx={{ minWidth: 40 }}>
+                  {severityIcon[severity]}
+                </ListItemIcon>
+                <ListItemText
+                  primary={
+                    <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
+                      <Typography fontWeight="bold">{msg}</Typography>
+                      <Chip label={cfg.label} color={cfg.color} size="small" variant="outlined" />
+                      {user && (
+                        <Chip icon={<PersonIcon />} label={user} size="small" variant="outlined" color="default" />
+                      )}
+                    </Box>
+                  }
+                  secondary={
+                    <Box>
+                      {alert.syscheck?.path && (
+                        <Typography variant="caption" color="text.secondary" display="block">
+                          📁 {alert.syscheck.path}
+                        </Typography>
+                      )}
+                      <Typography variant="caption" color="text.secondary">
+                        🕐 {new Date(alert.timestamp).toLocaleString('sr-RS')}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ ml: 2 }}>
+                        Rule: {alert.rule?.id} — {alert.rule?.description}
+                      </Typography>
+                    </Box>
+                  }
+                />
+              </ListItem>
+              {i < rowsPerPage - 1 && <Divider />}
+            </Box>
+          );
+        })}
+    </List>
+    <TablePagination
+      component="div"
+      count={filtered.length}
+      page={page}
+      onPageChange={(e, newPage) => setPage(newPage)}
+      rowsPerPage={rowsPerPage}
+      onRowsPerPageChange={e => {
+        setRowsPerPage(parseInt(e.target.value, 10));
+        setPage(0);
+      }}
+      rowsPerPageOptions={[5, 10, 25, 50, 100]}
+      labelRowsPerPage="Redova po stranici:"
+      labelDisplayedRows={({ from, to, count }) => `${from}–${to} od ${count}`}
+    />
+  </Paper>
+)}
 
       {!loading && filtered.length === 0 && !error && (
         <Alert severity="success">
