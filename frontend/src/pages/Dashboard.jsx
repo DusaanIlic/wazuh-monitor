@@ -11,6 +11,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { getAgents } from '../services/api';
 import { getAgentRiskLevel } from '../utils/eventTranslator';
+import { ToggleButton, ToggleButtonGroup, Divider } from '@mui/material';
 
 export default function Dashboard() {
   const [agents, setAgents] = useState([]);
@@ -18,6 +19,7 @@ export default function Dashboard() {
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [lastRefresh, setLastRefresh] = useState(new Date());
+  const [statusFilter, setStatusFilter] = useState('all');
   const navigate = useNavigate();
 
   const fetchAgents = async () => {
@@ -40,73 +42,85 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  const filtered = agents.filter(a =>
-    a.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = agents
+  .filter(a => a.name.toLowerCase().includes(search.toLowerCase()))
+  .filter(a => {
+    if (statusFilter === 'active') return a.status === 'active';
+    if (statusFilter === 'inactive') return a.status !== 'active';
+    return true;
+  });
 
   const activeCount = agents.filter(a => a.status === 'active').length;
 
   return (
-    <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
-      {/* Header */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Box>
-          <Typography variant="h4" fontWeight="bold">
-            Pregled računara
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Poslednje osvežavanje: {lastRefresh.toLocaleTimeString('sr-RS')}
-          </Typography>
-        </Box>
+    <Container maxWidth="xl" sx={{ mt: 3, mb: 4 }}>
+      <Box sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', mb: 2, width: '100%' }}>
+  
+      {/* Leva strana */}
+      <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 1 }}>
+        <Typography variant="h5" fontWeight="bold">Pregled računara</Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
+          — osveženo: {lastRefresh.toLocaleTimeString('sr-RS')}
+        </Typography>
         <Tooltip title="Osveži">
-          <IconButton onClick={fetchAgents} color="primary">
-            <RefreshIcon />
+          <IconButton onClick={fetchAgents} size="small" color="primary">
+            <RefreshIcon fontSize="small" />
           </IconButton>
         </Tooltip>
       </Box>
 
-      {/* Summary kartice */}
-      <Box display="flex" gap={2} mb={3} flexWrap="wrap">
-        <Paper sx={{ p: 2, minWidth: 140, textAlign: 'center' }}>
-          <Typography variant="h3" fontWeight="bold" color="primary">
-            {agents.length}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">Ukupno računara</Typography>
-        </Paper>
-        <Paper sx={{ p: 2, minWidth: 140, textAlign: 'center' }}>
-          <Typography variant="h3" fontWeight="bold" color="success.main">
-            {activeCount}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">Aktivnih</Typography>
-        </Paper>
-        <Paper sx={{ p: 2, minWidth: 140, textAlign: 'center' }}>
-          <Typography variant="h3" fontWeight="bold" color="error.main">
-            {agents.length - activeCount}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">Neaktivnih</Typography>
-        </Paper>
+      {/* Desna strana — statistike */}
+      <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+        <Box sx={{ textAlign: 'center' }}>
+          <Typography variant="h6" fontWeight="bold" color="primary" sx={{ lineHeight: 1 }}>{agents.length}</Typography>
+          <Typography variant="caption" color="text.secondary">Ukupno</Typography>
+        </Box>
+        <Divider orientation="vertical" flexItem sx={{ height: 32, alignSelf: 'center' }} />
+        <Box sx={{ textAlign: 'center' }}>
+          <Typography variant="h6" fontWeight="bold" color="success.main" sx={{ lineHeight: 1 }}>{activeCount}</Typography>
+          <Typography variant="caption" color="text.secondary">Aktivnih</Typography>
+        </Box>
+        <Divider orientation="vertical" flexItem sx={{ height: 32, alignSelf: 'center' }} />
+        <Box sx={{ textAlign: 'center' }}>
+          <Typography variant="h6" fontWeight="bold" color="error.main" sx={{ lineHeight: 1 }}>{agents.length - activeCount}</Typography>
+          <Typography variant="caption" color="text.secondary">Neaktivnih</Typography>
+        </Box>
       </Box>
 
-      {/* Search */}
-      <TextField
-        size="small"
-        placeholder="Pretraži po imenu računara..."
-        value={search}
-        onChange={e => setSearch(e.target.value)}
-        sx={{ mb: 2, width: 300 }}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon fontSize="small" />
-            </InputAdornment>
-          ),
-        }}
-      />
-
+</Box>
+  
+      {/* Search i Filter u jednom redu */}
+      <Box display="flex" alignItems="center" gap={2} mb={2}>
+        <TextField
+          size="small"
+          placeholder="Pretraži po imenu računara..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          sx={{ width: 280 }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon fontSize="small" />
+              </InputAdornment>
+            ),
+          }}
+        />
+        <ToggleButtonGroup
+          value={statusFilter}
+          exclusive
+          onChange={(e, val) => { if (val !== null) setStatusFilter(val); }}
+          size="small"
+        >
+          <ToggleButton value="all">Svi ({agents.length})</ToggleButton>
+          <ToggleButton value="active" color="success">Aktivni ({activeCount})</ToggleButton>
+          <ToggleButton value="inactive" color="error">Neaktivni ({agents.length - activeCount})</ToggleButton>
+        </ToggleButtonGroup>
+      </Box>
+  
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-
+  
       {/* Tabela */}
-      <TableContainer component={Paper}>
+      <TableContainer component={Paper} sx={{ mt: 2 }}>
         <Table>
           <TableHead>
             <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
@@ -128,14 +142,11 @@ export default function Dashboard() {
               </TableRow>
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} align="center">
-                  Nema rezultata
-                </TableCell>
+                <TableCell colSpan={7} align="center">Nema rezultata</TableCell>
               </TableRow>
             ) : (
               filtered.map(agent => {
                 const isActive = agent.status === 'active';
-                // Za sada dummy risk — kasnije ćemo povezati sa pravim alertima
                 const risk = getAgentRiskLevel(0);
                 return (
                   <TableRow key={agent.id} hover>
@@ -144,38 +155,21 @@ export default function Dashboard() {
                       <Typography variant="caption" color="text.secondary">ID: {agent.id}</Typography>
                     </TableCell>
                     <TableCell>
-                      <Chip
-                        label={isActive ? 'Aktivan' : 'Neaktivan'}
-                        color={isActive ? 'success' : 'error'}
-                        size="small"
-                      />
+                      <Chip label={isActive ? 'Aktivan' : 'Neaktivan'} color={isActive ? 'success' : 'error'} size="small" />
                     </TableCell>
-                    <TableCell>
-                      <Typography variant="body2">{agent.os?.name || 'N/A'}</Typography>
-                    </TableCell>
+                    <TableCell>{agent.os?.name || 'N/A'}</TableCell>
                     <TableCell>{agent.ip}</TableCell>
                     <TableCell>
-                      <Typography variant="body2">
-                        {new Date(agent.lastKeepAlive).getFullYear() === 9999
-                          ? 'Server'
-                          : new Date(agent.lastKeepAlive).toLocaleString('sr-RS')}
-                      </Typography>
+                      {new Date(agent.lastKeepAlive).getFullYear() === 9999
+                        ? 'Server'
+                        : new Date(agent.lastKeepAlive).toLocaleString('sr-RS')}
                     </TableCell>
                     <TableCell>
-                      <Chip
-                        label={risk.label}
-                        color={risk.color}
-                        size="small"
-                        variant="outlined"
-                      />
+                      <Chip label={risk.label} color={risk.color} size="small" variant="outlined" />
                     </TableCell>
                     <TableCell align="center">
                       <Tooltip title="Pogledaj detalje">
-                        <IconButton
-                          size="small"
-                          color="primary"
-                          onClick={() => navigate(`/agent/${agent.id}`)}
-                        >
+                        <IconButton size="small" color="primary" onClick={() => navigate(`/agent/${agent.id}`)}>
                           <VisibilityIcon />
                         </IconButton>
                       </Tooltip>
