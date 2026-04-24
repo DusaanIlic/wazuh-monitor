@@ -34,7 +34,7 @@ export function isSystemEvent(alert) {
   return systemUsers.some(u => 
     user.toUpperCase() === u || 
     targetUser.toUpperCase() === u ||
-    user.endsWith('$') // computer accounts
+    user.endsWith('$')
   );
 }
 
@@ -45,12 +45,11 @@ export function translateAlert(alert) {
   const user = alert.data?.win?.eventdata?.subjectUserName || 
                alert.data?.win?.eventdata?.targetUserName || '';
 
-  // Proveri po rule ID
   if (ruleIdMessages[ruleId]) {
     return { ...ruleIdMessages[ruleId], user };
   }
 
-  // Proveri putanju
+
   if (path.toLowerCase().includes('\\temp\\') || path.toLowerCase().includes('/tmp/')) {
     return { msg: 'Aktivnost u privremenom folderu (Temp)', severity: 'critical', user };
   }
@@ -63,14 +62,12 @@ export function translateAlert(alert) {
     return { msg: 'Promena u System32 folderu', severity: 'critical', user };
   }
 
-  // Proveri po grupi
   for (const group of groups) {
     if (ruleGroupMessages[group]) {
       return { ...ruleGroupMessages[group], user };
     }
   }
 
-  // Default — koristi rule.description
   return {
     msg: alert.rule?.description || 'Sistemski event',
     severity: alert.rule?.level >= 10 ? 'critical' : alert.rule?.level >= 5 ? 'warning' : 'info',
@@ -79,7 +76,7 @@ export function translateAlert(alert) {
 }
 
 export function getAgentRiskLevel(alertCount) {
-  if (alertCount === 0) return { label: 'Uredu', color: 'success' };
+  if (alertCount === 0) return { label: 'U redu', color: 'success' };
   if (alertCount <= 5) return { label: 'Pažnja', color: 'warning' };
   return { label: 'Rizik', color: 'error' };
 }
