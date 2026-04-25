@@ -26,7 +26,8 @@ const severityIcon = {
 };
 
 export default function AgentDetails() {
-  const { agentId } = useParams();
+  const { agentId } = useParams()
+  const [agentName, setAgentName] = useState(agentId);;
   const navigate = useNavigate();
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -62,6 +63,19 @@ export default function AgentDetails() {
       }
     };
     fetchAlerts();
+  }, [agentId]);
+
+
+  useEffect(() => {
+    const fetchAgentName = async () => {
+      try {
+        const res = await axios.get(`http://localhost:3001/api/agents`);
+        const agents = res.data.data.affected_items;
+        const agent = agents.find(a => a.id === agentId);
+        if (agent) setAgentName(agent.name);
+      } catch {}
+    };
+    fetchAgentName();
   }, [agentId]);
 
   const filtered = hideSystem ? alerts.filter(a => !a.isSystem) : alerts;
@@ -148,7 +162,7 @@ export default function AgentDetails() {
       <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
         <Box>
           <Typography variant="h4" fontWeight="bold">
-            Računar: {agentId}
+            Računar: {agentName}
           </Typography>
           <Typography variant="body2" color="text.secondary">
             Prikaz detektovanih aktivnosti

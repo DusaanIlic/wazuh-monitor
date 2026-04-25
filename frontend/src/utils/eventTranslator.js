@@ -80,3 +80,11 @@ export function getAgentRiskLevel(alertCount) {
   if (alertCount <= 5) return { label: 'Pažnja', color: 'warning' };
   return { label: 'Rizik', color: 'error' };
 }
+
+export function timeAgo(dateStr) {
+  const diff = Math.floor((new Date() - new Date(dateStr)) / 1000);
+  if (diff < 60) return 'pre manje od minuta';
+  if (diff < 3600) return `pre ${Math.floor(diff / 60)} min`;
+  if (diff < 86400) return `pre ${Math.floor(diff / 3600)} h`;
+  return `pre ${Math.floor(diff / 86400)} dana`;
+}

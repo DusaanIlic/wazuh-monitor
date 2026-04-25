@@ -10,7 +10,7 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import SearchIcon from '@mui/icons-material/Search';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { getAgents, getAgentRisk } from '../services/api';
-import { getAgentRiskLevel } from '../utils/eventTranslator';
+import { getAgentRiskLevel, timeAgo } from '../utils/eventTranslator';
 import { ToggleButton, ToggleButtonGroup, Divider } from '@mui/material';
 
 export default function Dashboard() {
@@ -185,7 +185,7 @@ export default function Dashboard() {
                     <TableCell align="center">
                       {new Date(agent.lastKeepAlive).getFullYear() === 9999
                         ? 'Server'
-                        : new Date(agent.lastKeepAlive).toLocaleString('sr-RS')}
+                        : timeAgo(agent.lastKeepAlive)}
                     </TableCell>
                     <TableCell align="center">
                     <Chip label={riskLabel.label} color={riskLabel.color} size="small" variant="outlined" />
