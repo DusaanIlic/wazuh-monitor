@@ -13,3 +13,8 @@ export const getAgentAlerts = async (agentId, limit = 100) => {
   const res = await api.get(`/events/${agentId}/alerts?limit=${limit}`);
   return res.data.data;
 };
+
+export const getAgentRisk = async (agentId) => {
+  const res = await api.get(`/agents/${agentId}/risk`);
+  return res.data.data;
+};

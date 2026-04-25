@@ -9,7 +9,7 @@ import {
 import RefreshIcon from '@mui/icons-material/Refresh';
 import SearchIcon from '@mui/icons-material/Search';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import { getAgents } from '../services/api';
+import { getAgents, getAgentRisk } from '../services/api';
 import { getAgentRiskLevel } from '../utils/eventTranslator';
 import { ToggleButton, ToggleButtonGroup, Divider } from '@mui/material';
 
@@ -20,6 +20,7 @@ export default function Dashboard() {
   const [search, setSearch] = useState('');
   const [lastRefresh, setLastRefresh] = useState(new Date());
   const [statusFilter, setStatusFilter] = useState('all');
+  const [agentRisks, setAgentRisks] = useState({});
   const navigate = useNavigate();
 
   const fetchAgents = async () => {
@@ -49,6 +50,24 @@ export default function Dashboard() {
     if (statusFilter === 'inactive') return a.status !== 'active';
     return true;
   });
+
+  
+  useEffect(() => {
+    const fetchRisks = async () => {
+      const risks = {};
+      for (const agent of agents) {
+        try {
+          const risk = await getAgentRisk(agent.id);
+          risks[agent.id] = risk;
+        } catch {
+          risks[agent.id] = { risk: 'low', critical: 0, warning: 0 };
+        }
+      }
+      setAgentRisks(risks);
+    };
+    
+    if (agents.length > 0) fetchRisks();
+  }, [agents]);
 
   const activeCount = agents.filter(a => a.status === 'active').length;
 
@@ -124,12 +143,12 @@ export default function Dashboard() {
         <Table>
           <TableHead>
             <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-              <TableCell><strong>Računar</strong></TableCell>
-              <TableCell><strong>Status</strong></TableCell>
-              <TableCell><strong>OS</strong></TableCell>
-              <TableCell><strong>IP adresa</strong></TableCell>
-              <TableCell><strong>Poslednji kontakt</strong></TableCell>
-              <TableCell><strong>Procena</strong></TableCell>
+              <TableCell align="center"><strong>Računar</strong></TableCell>
+              <TableCell align="center"><strong>Status</strong></TableCell>
+              <TableCell align="center"><strong>OS</strong></TableCell>
+              <TableCell align="center"><strong>IP adresa</strong></TableCell>
+              <TableCell align="center"><strong>Poslednji kontakt</strong></TableCell>
+              <TableCell align="center"><strong>Procena</strong></TableCell>
               <TableCell align="center"><strong>Detalji</strong></TableCell>
             </TableRow>
           </TableHead>
@@ -147,25 +166,29 @@ export default function Dashboard() {
             ) : (
               filtered.map(agent => {
                 const isActive = agent.status === 'active';
-                const risk = getAgentRiskLevel(0);
+                const risk = agentRisks[agent.id];
+                const riskLabel = !risk ? { label: '...', color: 'default' } :
+                risk.risk === 'critical' ? { label: `Rizik (${risk.critical} kritičnih)`, color: 'error' } :
+                risk.risk === 'warning' ? { label: `Pažnja (${risk.warning} upozorenja)`, color: 'warning' } :
+                { label: 'U redu', color: 'success' };
                 return (
                   <TableRow key={agent.id} hover>
-                    <TableCell>
+                    <TableCell align="center">
                       <Typography fontWeight="bold">{agent.name}</Typography>
                       <Typography variant="caption" color="text.secondary">ID: {agent.id}</Typography>
                     </TableCell>
-                    <TableCell>
+                    <TableCell align="center">
                       <Chip label={isActive ? 'Aktivan' : 'Neaktivan'} color={isActive ? 'success' : 'error'} size="small" />
                     </TableCell>
-                    <TableCell>{agent.os?.name || 'N/A'}</TableCell>
-                    <TableCell>{agent.ip}</TableCell>
-                    <TableCell>
+                    <TableCell align="center">{agent.os?.name || 'N/A'}</TableCell>
+                    <TableCell align="center">{agent.ip}</TableCell>
+                    <TableCell align="center">
                       {new Date(agent.lastKeepAlive).getFullYear() === 9999
                         ? 'Server'
                         : new Date(agent.lastKeepAlive).toLocaleString('sr-RS')}
                     </TableCell>
-                    <TableCell>
-                      <Chip label={risk.label} color={risk.color} size="small" variant="outlined" />
+                    <TableCell align="center">
+                    <Chip label={riskLabel.label} color={riskLabel.color} size="small" variant="outlined" />
                     </TableCell>
                     <TableCell align="center">
                       <Tooltip title="Pogledaj detalje">
