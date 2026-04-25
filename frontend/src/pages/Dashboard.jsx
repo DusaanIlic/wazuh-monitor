@@ -4,14 +4,13 @@ import {
   Container, Typography, Box, CircularProgress, Alert,
   Table, TableBody, TableCell, TableContainer, TableHead,
   TableRow, Paper, Chip, IconButton, Tooltip, TextField,
-  InputAdornment
+  InputAdornment,  ToggleButton, ToggleButtonGroup, Divider
 } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import SearchIcon from '@mui/icons-material/Search';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { getAgents, getAgentRisk } from '../services/api';
-import { getAgentRiskLevel, timeAgo } from '../utils/eventTranslator';
-import { ToggleButton, ToggleButtonGroup, Divider } from '@mui/material';
+import { timeAgo } from '../utils/eventTranslator';
 
 export default function Dashboard() {
   const [agents, setAgents] = useState([]);

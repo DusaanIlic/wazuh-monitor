@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
   Dialog, DialogTitle, DialogContent, Box, Typography,
-  Alert, Paper, Chip, TablePagination
+  Alert, Paper, TablePagination
 } from '@mui/material';
 import axios from 'axios';
 

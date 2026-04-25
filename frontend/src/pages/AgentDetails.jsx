@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  Container, Typography, Box, CircularProgress, Alert,
+  Container, Typography, Box, Alert,
   Button, Paper, Chip, Divider, List, ListItem,
-  ListItemIcon, ListItemText, FormControlLabel, Switch
+  ListItemIcon, ListItemText, FormControlLabel, Switch, TablePagination
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
@@ -12,9 +12,7 @@ import InfoIcon from '@mui/icons-material/Info';
 import PersonIcon from '@mui/icons-material/Person';
 import { getAgentAlerts } from '../services/api';
 import { translateAlert, severityConfig, isSystemEvent } from '../utils/eventTranslator';
-import { TablePagination } from '@mui/material';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
-import { Dialog, DialogTitle, DialogContent } from '@mui/material';
 import NetworkCheckIcon from '@mui/icons-material/NetworkCheck';
 import axios from 'axios'
 import ScreenshotDialog from '../components/ScreenshotDialog';
