@@ -5,7 +5,7 @@ const agentsRouter = require('./routes/agents');
 const eventsRouter = require('./routes/events');
 const alertsRouter = require('./routes/alerts');
 const screenshotsRouter = require('./routes/screenshots');
-
+const networkRouter = require('./routes/network');
 
 const app = express();
 app.use(cors());
@@ -21,6 +21,7 @@ app.use('/api/agents', agentsRouter);
 app.use('/api/events', eventsRouter);
 app.use('/api/alerts', alertsRouter);
 app.use('/api/screenshots', screenshotsRouter);
+app.use('/api/network', networkRouter);
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
