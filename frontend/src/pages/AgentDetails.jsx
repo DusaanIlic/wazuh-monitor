@@ -311,11 +311,11 @@ export default function AgentDetails() {
                 .map((p, i) => (
                   <Paper key={i} sx={{ p: 1.5, mb: 1, backgroundColor: '#fff5f5', border: '1px solid #ffcdd2' }}>
                   <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '4px', mb: 0.5 }}>
-  <Typography color="error" variant="body2">⚠️</Typography>
-  <Typography fontWeight="bold" color="error" variant="body2">
-    Nedozvoljena komunikacija
-  </Typography>
-</Box>
+                    <Typography color="error" variant="body2">⚠️</Typography>
+                    <Typography fontWeight="bold" color="error" variant="body2">
+                      Nedozvoljena komunikacija
+                    </Typography>
+                  </Box>
                   <Typography variant="body2" sx={{ ml: 0.5 }}>
                     <strong>{p.process}</strong> pokušava da komunicira sa spoljnom adresom
                   </Typography>
