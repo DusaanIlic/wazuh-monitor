@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog, DialogTitle, DialogContent, Box, Typography,
   Button, CircularProgress, Alert
@@ -36,12 +36,19 @@ export default function ScreenshotDialog({ open, onClose, agentId }) {
     }
   };
 
+
+  useEffect(() => {
+    if (open) {
+      fetchScreenshots();
+    }
+  }, [open]);
+
   const handleOpen = () => {
     fetchScreenshots();
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth TransitionProps={{ onEntered: handleOpen }}>
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Typography variant="h6">Screenshots — {agentId}</Typography>
