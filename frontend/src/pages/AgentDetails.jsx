@@ -15,6 +15,7 @@ import { translateAlert, severityConfig, isSystemEvent } from '../utils/eventTra
 import { TablePagination } from '@mui/material';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import { Dialog, DialogTitle, DialogContent } from '@mui/material';
+import NetworkCheckIcon from '@mui/icons-material/NetworkCheck';
 import axios from 'axios'
 
 
@@ -36,6 +37,10 @@ export default function AgentDetails() {
   const [screenshots, setScreenshots] = useState([]);
   const [screenshotDialog, setScreenshotDialog] = useState(false);
   const [triggeringScreenshot, setTriggeringScreenshot] = useState(false);
+  const [ports, setPorts] = useState([]);
+  const [showNetwork, setShowNetwork] = useState(false);
+  const [networkPage, setNetworkPage] = useState(0);
+  const [networkRowsPerPage, setNetworkRowsPerPage] = useState(3);
 
   useEffect(() => {
     const fetchAlerts = async () => {
@@ -87,6 +92,34 @@ export default function AgentDetails() {
     }
   };
 
+  const fetchPorts = async () => {
+    try {
+      const res = await axios.get(`http://localhost:3001/api/network/${agentId}/ports`);
+      const items = res.data.data.affected_items || [];
+      
+      const isLocalIP = (ip) => {
+        if (!ip) return true;
+        return ip.startsWith('192.168.') || 
+               ip.startsWith('10.') || 
+               ip.startsWith('172.') ||
+               ip === '0.0.0.0' ||
+               ip === '::' ||
+               ip === '127.0.0.1';
+      };
+  
+      // Samo established konekcije ka spoljnim IP-ovima
+      const suspicious = items.filter(p => 
+        p.remote?.ip && 
+        p.state === 'established' &&
+        !isLocalIP(p.remote.ip)
+      );
+      
+      setPorts(suspicious);
+    } catch (err) {
+      console.error('Greška');
+    }
+  };
+
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Box display="flex" gap={2} alignItems="center">
@@ -100,6 +133,15 @@ export default function AgentDetails() {
           color="primary"
         >
           Screenshots
+        </Button>
+
+        <Button
+          variant="outlined"
+          startIcon={<NetworkCheckIcon />}
+          onClick={() => { fetchPorts(); setShowNetwork(true); }}
+          color="info"
+        >
+          Mreža
         </Button>
       </Box>
 
@@ -241,6 +283,61 @@ export default function AgentDetails() {
                   />
                 </Box>
               ))}
+            </Box>
+          )}
+        </DialogContent>
+      </Dialog>
+
+
+      <Dialog
+        open={showNetwork}
+        onClose={() => setShowNetwork(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>Mrežne konekcije — Računar {agentId}</DialogTitle>
+        <DialogContent>
+          {ports.length === 0 ? (
+            <Alert severity="success" sx={{ mt: 1 }}>
+              Nisu detektovane sumnjive mrežne konekcije.
+            </Alert>
+          ) : (
+            <Box>
+              <Alert severity="error" sx={{ mb: 2 }}>
+                Detektovano {ports.length} sumnjiva mrežna konekcija ka spoljnim adresama!
+              </Alert>
+              {ports
+                .slice(networkPage * networkRowsPerPage, networkPage * networkRowsPerPage + networkRowsPerPage)
+                .map((p, i) => (
+                  <Paper key={i} sx={{ p: 1.5, mb: 1, backgroundColor: '#fff5f5', border: '1px solid #ffcdd2' }}>
+                  <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '4px', mb: 0.5 }}>
+  <Typography color="error" variant="body2">⚠️</Typography>
+  <Typography fontWeight="bold" color="error" variant="body2">
+    Nedozvoljena komunikacija
+  </Typography>
+</Box>
+                  <Typography variant="body2" sx={{ ml: 0.5 }}>
+                    <strong>{p.process}</strong> pokušava da komunicira sa spoljnom adresom
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" display="block">
+                    🌐 {p.remote?.ip}:{p.remote?.port} — {p.protocol?.toUpperCase()}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    🖥️ Lokalni port: {p.local?.port}
+                  </Typography>
+                </Paper>
+                ))}
+              <TablePagination
+                component="div"
+                count={ports.length}
+                page={networkPage}
+                onPageChange={(e, val) => setNetworkPage(val)}
+                rowsPerPage={networkRowsPerPage}
+                onRowsPerPageChange={e => { setNetworkRowsPerPage(parseInt(e.target.value)); setNetworkPage(0); }}
+                rowsPerPageOptions={[3, 5, 10, 20]}
+                labelRowsPerPage="Po stranici:"
+                labelDisplayedRows={({ from, to, count }) => `${from}–${to} od ${count}`}
+              />
             </Box>
           )}
         </DialogContent>
