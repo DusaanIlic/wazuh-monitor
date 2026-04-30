@@ -5,6 +5,7 @@ import {
 } from '@mui/material';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import axios from 'axios';
+import { API_URL } from '../config';
 
 export default function ScreenshotDialog({ open, onClose, agentId }) {
   const [screenshots, setScreenshots] = useState([]);
@@ -14,7 +15,7 @@ export default function ScreenshotDialog({ open, onClose, agentId }) {
   const fetchScreenshots = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`http://localhost:3001/api/screenshots/list/${agentId}`);
+      const res = await axios.get(`${API_URL}/api/screenshots/list/${agentId}`);
       setScreenshots(res.data.data);
     } catch (err) {
       console.error('Greška pri dohvatanju screenshotova');
@@ -26,7 +27,7 @@ export default function ScreenshotDialog({ open, onClose, agentId }) {
   const triggerScreenshot = async () => {
     setTriggering(true);
     try {
-      await axios.post(`http://localhost:3001/api/screenshots/trigger/${agentId}`);
+      await axios.post(`${API_URL}/api/screenshots/trigger/${agentId}`);
       setTimeout(async () => {
         await fetchScreenshots();
         setTriggering(false);
@@ -74,7 +75,7 @@ export default function ScreenshotDialog({ open, onClose, agentId }) {
               🕐 {new Date(s.timestamp).toLocaleString('sr-RS')}
             </Typography>
             <img
-              src={`http://localhost:3001${s.url}`}
+              src={`${API_URL}${s.url}`}
               alt="screenshot"
               style={{ width: '100%', borderRadius: 4, border: '1px solid #ddd' }}
             />

@@ -4,6 +4,7 @@ import {
   Alert, Paper, TablePagination
 } from '@mui/material';
 import axios from 'axios';
+import { API_URL } from '../config';
 
 export default function NetworkDialog({ open, onClose, agentId }) {
   const [ports, setPorts] = useState([]);
@@ -31,7 +32,7 @@ export default function NetworkDialog({ open, onClose, agentId }) {
   const fetchPorts = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`http://localhost:3001/api/network/${agentId}/ports`);
+      const res = await axios.get(`${API_URL}/api/network/${agentId}/ports`);
       const items = res.data.data.affected_items || [];
       const suspicious = items.filter(p =>
         p.remote?.ip && p.state === 'established' && !isLocalIP(p.remote.ip)

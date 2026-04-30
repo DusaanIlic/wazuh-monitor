@@ -17,6 +17,7 @@ import NetworkCheckIcon from '@mui/icons-material/NetworkCheck';
 import axios from 'axios'
 import ScreenshotDialog from '../components/ScreenshotDialog';
 import NetworkDialog from '../components/NetworkDialog';
+import { API_URL } from '../config';
 
 const severityIcon = {
   critical: <ErrorIcon color="error" />,
@@ -68,7 +69,7 @@ export default function AgentDetails() {
   useEffect(() => {
     const fetchAgentName = async () => {
       try {
-        const res = await axios.get(`http://localhost:3001/api/agents`);
+        const res = await axios.get(`${API_URL}/api/agents`);
         const agents = res.data.data.affected_items;
         const agent = agents.find(a => a.id === agentId);
         if (agent) setAgentName(agent.name);
@@ -83,7 +84,7 @@ export default function AgentDetails() {
 
   const fetchScreenshots = async () => {
     try {
-      const res = await axios.get(`http://localhost:3001/api/screenshots/list/${agentId}`);
+      const res = await axios.get(`${API_URL}/api/screenshots/list/${agentId}`);
       setScreenshots(res.data.data);
     } catch (err) {
       console.error('Greška pri dohvatanju screenshotova');
@@ -93,8 +94,7 @@ export default function AgentDetails() {
   const triggerScreenshot = async () => {
     setTriggeringScreenshot(true);
     try {
-      await axios.post(`http://localhost:3001/api/screenshots/trigger/${agentId}`);
-      // Sačekaj 8 sekundi pa osveži
+      await axios.post(`${API_URL}/api/screenshots/trigger/${agentId}`);
       setTimeout(async () => {
         await fetchScreenshots();
         setTriggeringScreenshot(false);
@@ -107,7 +107,7 @@ export default function AgentDetails() {
 
   const fetchPorts = async () => {
     try {
-      const res = await axios.get(`http://localhost:3001/api/network/${agentId}/ports`);
+      const res = await axios.get(`${API_URL}/api/network/${agentId}/ports`);
       const items = res.data.data.affected_items || [];
       
       const isLocalIP = (ip) => {
