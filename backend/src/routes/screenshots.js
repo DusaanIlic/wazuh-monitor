@@ -65,4 +65,47 @@ router.get('/pending/:agentId', (req, res) => {
     }
   });
 
+  const processedAlerts = new Set();
+
+  async function checkAndTriggerScreenshots() {
+    try {
+      const { searchAlerts } = require('../services/opensearch');
+      const { apiRequest } = require('../services/wazuhApi');
+
+      // Dohvati sve agente
+      const agentsData = await apiRequest('get', '/agents', { status: 'active' });
+      const agents = agentsData.data.affected_items.filter(a => a.id !== '000');
+
+      for (const agent of agents) {
+        // Dohvati kritične alerte poslednjih 2 minuta
+        const alerts = await searchAlerts(agent.id, { limit: 10 });
+        
+        const criticalAlerts = alerts.filter(a => {
+          const alertId = a.id;
+          const isCritical = a.rule?.level >= 10 || 
+            a.rule?.groups?.includes('syscheck') ||
+            a.rule?.id === '18101'; // USB
+          
+          // Preskoci vec procesirane alerte
+          if (processedAlerts.has(alertId)) return false;
+          if (isCritical) processedAlerts.add(alertId);
+          return isCritical;
+        });
+
+        if (criticalAlerts.length > 0) {
+          console.log(`Auto screenshot za agenta ${agent.id} — ${criticalAlerts.length} kritičnih alertova`);
+          pendingScreenshots.add(agent.id);
+        }
+      }
+
+      if (processedAlerts.size > 1000) processedAlerts.clear();
+
+    } catch (err) {
+      console.error('Auto screenshot greška:', err.message);
+    }
+  }
+
+  // Provera na 30 sekundi
+  setInterval(checkAndTriggerScreenshots, 30000);
+
 module.exports = router;
