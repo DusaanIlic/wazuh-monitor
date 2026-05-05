@@ -48,7 +48,7 @@ export default function ScreenshotDialog({ open, onClose, agentId }) {
   const current = screenshots[currentIndex];
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="xl" fullWidth>
       <DialogTitle>
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Typography variant="h6">Screenshots — {agentId}</Typography>

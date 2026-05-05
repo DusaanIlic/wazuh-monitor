@@ -162,7 +162,7 @@ export default function AgentDetails() {
 
    
 
-      <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
+      <Box display="flex" flexDirection="row" justifyContent="space-between" alignItems="center" mb={2} mt={2}>
         <Box>
           <Typography variant="h4" fontWeight="bold">
             Računar: {agentName}
@@ -170,21 +170,17 @@ export default function AgentDetails() {
           <Typography variant="body2" color="text.secondary">
             Prikaz detektovanih aktivnosti
           </Typography>
-        </Box>
-      </Box>
-
-
-      <Box display="flex" flexDirection="row" justifyContent="space-between" alignItems="center" mb={2} mt={2}>
-        <Box display="flex" flexDirection="row" gap={1} alignItems="center">
-          {criticalCount > 0 && (
-            <Chip icon={<ErrorIcon />} label={`${criticalCount} kritičnih`} color="error" />
-          )}
-          {warningCount > 0 && (
-            <Chip icon={<WarningAmberIcon />} label={`${warningCount} upozorenja`} color="warning" />
-          )}
-          {criticalCount === 0 && warningCount === 0 && !loading && (
-            <Chip label="Bez nepravilnosti" color="success" />
-          )}
+          <Box display="flex" flexDirection="row" gap={1} alignItems="center" mt={1}>
+            {criticalCount > 0 && (
+              <Chip icon={<ErrorIcon />} label={`${criticalCount} kritičnih`} color="error" />
+            )}
+            {warningCount > 0 && (
+              <Chip icon={<WarningAmberIcon />} label={`${warningCount} upozorenja`} color="warning" />
+            )}
+            {criticalCount === 0 && warningCount === 0 && !loading && (
+              <Chip label="Bez nepravilnosti" color="success" />
+            )}
+          </Box>
         </Box>
 
         <Box display="flex" flexDirection="row" alignItems="center" gap={1}>
