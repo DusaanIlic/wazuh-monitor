@@ -5,10 +5,18 @@ require('dotenv').config();
 const agent = new https.Agent({ rejectUnauthorized: false });
 
 async function searchAlerts(agentId, filters = {}) {
-  const { limit = 100, username } = filters;
+  const { limit = 100, username, timeRange = '24h' } = filters;
 
   const must = [
     { term: { 'agent.id': agentId } },
+    {
+      range: {
+        timestamp: {
+          gte: `now-${timeRange}`,
+          lte: 'now'
+        }
+      }
+    }
   ];
 
   if (username) {

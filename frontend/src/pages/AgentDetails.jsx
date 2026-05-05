@@ -42,11 +42,12 @@ export default function AgentDetails() {
   const [showNetwork, setShowNetwork] = useState(false);
   const [networkPage, setNetworkPage] = useState(0);
   const [networkRowsPerPage, setNetworkRowsPerPage] = useState(3);
+  const [timeRange, setTimeRange] = useState('24h');
 
   useEffect(() => {
     const fetchAlerts = async () => {
       try {
-        const data = await getAgentAlerts(agentId, 200);
+        const data = await getAgentAlerts(agentId, 200, timeRange);
         const translated = data.map(a => ({
           ...a,
           translated: translateAlert(a),
@@ -63,7 +64,7 @@ export default function AgentDetails() {
       }
     };
     fetchAlerts();
-  }, [agentId]);
+  }, [agentId, timeRange]);
 
 
   useEffect(() => {
@@ -156,6 +157,20 @@ export default function AgentDetails() {
         >
           Mreža
         </Button>
+      </Box>
+
+      <Box display="flex" alignItems="center" gap={2} mb={2}>
+        <Typography variant="body2">Prikaži:</Typography>
+        <ToggleButtonGroup
+          value={timeRange}
+          exclusive
+          onChange={(e, val) => { if (val) { setTimeRange(val); } }}
+          size="small"
+        >
+          <ToggleButton value="1h">Poslednjih sat</ToggleButton>
+          <ToggleButton value="24h">Poslednjih 24h</ToggleButton>
+          <ToggleButton value="7d">Poslednjih 7 dana</ToggleButton>
+        </ToggleButtonGroup>
       </Box>
 
       <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
