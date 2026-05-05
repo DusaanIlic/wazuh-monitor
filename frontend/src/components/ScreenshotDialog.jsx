@@ -48,7 +48,7 @@ export default function ScreenshotDialog({ open, onClose, agentId }) {
   const current = screenshots[currentIndex];
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="xl" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="xl" fullWidth sx={{ '& .MuiDialog-paper': { overflow: 'hidden' } }}>
       <DialogTitle>
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Typography variant="h6">Screenshots — {agentId}</Typography>
@@ -63,14 +63,13 @@ export default function ScreenshotDialog({ open, onClose, agentId }) {
           </Button>
         </Box>
       </DialogTitle>
-      <DialogContent>
+      <DialogContent sx={{ overflow: 'hidden', p: 2 }}>
         {loading && <CircularProgress />}
         {!loading && screenshots.length === 0 && (
           <Alert severity="info">Nema screenshotova za ovaj računar.</Alert>
         )}
         {!loading && screenshots.length > 0 && (
           <Box>
-            {/* Timestamp i brojač */}
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
               <Typography variant="caption" color="text.secondary">
                 🕐 {new Date(current.timestamp).toLocaleString('sr-RS')}
@@ -80,21 +79,21 @@ export default function ScreenshotDialog({ open, onClose, agentId }) {
               </Typography>
             </Box>
 
-            <Box position="relative">
+            <Box position="relative" sx={{ overflow: 'hidden' }}>
               <img
                 src={`${API_URL}${current.url}`}
                 alt="screenshot"
-                style={{ width: '100%', borderRadius: 4, border: '1px solid #ddd', display: 'block' }}
+                style={{ width: '100%', maxWidth: '100%', borderRadius: 4, border: '1px solid #ddd', display: 'block',  maxHeight: '70vh', objectFit: 'contain', }}
               />
               <IconButton
                 onClick={() => setCurrentIndex(i => Math.max(0, i - 1))}
                 disabled={currentIndex === 0}
                 sx={{
                   position: 'absolute',
-                  left: -20,
+                  left: 8,
                   top: '50%',
                   transform: 'translateY(-50%)',
-                  backgroundColor: 'white',
+                  backgroundColor: 'rgba(255,255,255,0.8)',
                   boxShadow: 2,
                   '&:hover': { backgroundColor: '#f5f5f5' }
                 }}
@@ -107,10 +106,10 @@ export default function ScreenshotDialog({ open, onClose, agentId }) {
                 disabled={currentIndex === screenshots.length - 1}
                 sx={{
                   position: 'absolute',
-                  right: -20,
+                  right: 8,
                   top: '50%',
                   transform: 'translateY(-50%)',
-                  backgroundColor: 'white',
+                  backgroundColor: 'rgba(255,255,255,0.8)',
                   boxShadow: 2,
                   '&:hover': { backgroundColor: '#f5f5f5' }
                 }}
