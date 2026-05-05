@@ -33,6 +33,7 @@ async function searchAlerts(agentId, filters = {}) {
           { term: { 'data.win.eventdata.subjectUserName': 'SYSTEM' } },
           { term: { 'data.win.eventdata.subjectUserName': 'LOCAL SERVICE' } },
           { term: { 'data.win.eventdata.subjectUserName': 'NETWORK SERVICE' } },
+          { wildcard: { 'syscheck.path': '*wazuh-screenshot.trigger*' } },
         ]
       }
     }
