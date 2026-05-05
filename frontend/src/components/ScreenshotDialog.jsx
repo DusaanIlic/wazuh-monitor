@@ -80,24 +80,40 @@ export default function ScreenshotDialog({ open, onClose, agentId }) {
               </Typography>
             </Box>
 
-            {/* Slika sa strelicama */}
-            <Box display="flex" alignItems="center" gap={1}>
+            <Box position="relative">
+              <img
+                src={`${API_URL}${current.url}`}
+                alt="screenshot"
+                style={{ width: '100%', borderRadius: 4, border: '1px solid #ddd', display: 'block' }}
+              />
               <IconButton
                 onClick={() => setCurrentIndex(i => Math.max(0, i - 1))}
                 disabled={currentIndex === 0}
+                sx={{
+                  position: 'absolute',
+                  left: -20,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  backgroundColor: 'white',
+                  boxShadow: 2,
+                  '&:hover': { backgroundColor: '#f5f5f5' }
+                }}
               >
                 <ArrowBackIosIcon />
               </IconButton>
 
-              <img
-                src={`${API_URL}${current.url}`}
-                alt="screenshot"
-                style={{ flex: 1, width: '100%', borderRadius: 4, border: '1px solid #ddd' }}
-              />
-
               <IconButton
                 onClick={() => setCurrentIndex(i => Math.min(screenshots.length - 1, i + 1))}
                 disabled={currentIndex === screenshots.length - 1}
+                sx={{
+                  position: 'absolute',
+                  right: -20,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  backgroundColor: 'white',
+                  boxShadow: 2,
+                  '&:hover': { backgroundColor: '#f5f5f5' }
+                }}
               >
                 <ArrowForwardIosIcon />
               </IconButton>

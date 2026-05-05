@@ -174,33 +174,33 @@ export default function AgentDetails() {
       </Box>
 
 
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-          <Box display="flex" gap={1} flexWrap="wrap">
-            {criticalCount > 0 && (
-              <Chip icon={<ErrorIcon />} label={`${criticalCount} kritičnih`} color="error" />
-            )}
-            {warningCount > 0 && (
-              <Chip icon={<WarningAmberIcon />} label={`${warningCount} upozorenja`} color="warning" />
-            )}
-            {criticalCount === 0 && warningCount === 0 && !loading && (
-              <Chip label="Bez nepravilnosti" color="success" />
-            )}
-          </Box>
-
-          <Box display="flex" alignItems="center" gap={1}>
-            <Typography variant="body2">Prikaži:</Typography>
-            <ToggleButtonGroup
-              value={timeRange}
-              exclusive
-              onChange={(e, val) => { if (val) { setTimeRange(val); } }}
-              size="small"
-            >
-              <ToggleButton value="1h">Poslednjih sat</ToggleButton>
-              <ToggleButton value="24h">Poslednjih 24h</ToggleButton>
-              <ToggleButton value="7d">Poslednjih 7 dana</ToggleButton>
-            </ToggleButtonGroup>
-          </Box>
+      <Box display="flex" flexDirection="row" justifyContent="space-between" alignItems="center" mb={2} mt={2}>
+        <Box display="flex" flexDirection="row" gap={1} alignItems="center">
+          {criticalCount > 0 && (
+            <Chip icon={<ErrorIcon />} label={`${criticalCount} kritičnih`} color="error" />
+          )}
+          {warningCount > 0 && (
+            <Chip icon={<WarningAmberIcon />} label={`${warningCount} upozorenja`} color="warning" />
+          )}
+          {criticalCount === 0 && warningCount === 0 && !loading && (
+            <Chip label="Bez nepravilnosti" color="success" />
+          )}
         </Box>
+
+        <Box display="flex" flexDirection="row" alignItems="center" gap={1}>
+          <Typography variant="body2" sx={{ whiteSpace: 'nowrap' }}>Prikaži:</Typography>
+          <ToggleButtonGroup
+            value={timeRange}
+            exclusive
+            onChange={(e, val) => { if (val) setTimeRange(val); }}
+            size="small"
+          >
+            <ToggleButton value="1h">Poslednjih sat</ToggleButton>
+            <ToggleButton value="24h">Poslednjih 24h</ToggleButton>
+            <ToggleButton value="7d">Poslednjih 7 dana</ToggleButton>
+          </ToggleButtonGroup>
+        </Box>
+      </Box>
 
       <FormControlLabel
         control={<Switch checked={hideSystem} onChange={e => setHideSystem(e.target.checked)} />}
