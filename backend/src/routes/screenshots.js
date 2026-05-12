@@ -106,6 +106,6 @@ router.get('/pending/:agentId', (req, res) => {
   }
 
   // Provera na 30 sekundi
-  setInterval(checkAndTriggerScreenshots, 30000);
+  //setInterval(checkAndTriggerScreenshots, 30000);
 
 module.exports = router;

@@ -36,6 +36,21 @@ export default function Dashboard() {
     }
   };
 
+  const isAgentReallyActive = (agent) => {
+    if (agent.id === '000') return true;
+    if (agent.status !== 'active') return false;
+    if (!agent.lastKeepAlive) return false;
+  
+    const lastKeepAlive = new Date(agent.lastKeepAlive);
+  
+    if (lastKeepAlive.getFullYear() === 9999) return true;
+  
+    const diffMs = Date.now() - lastKeepAlive.getTime();
+    const diffMinutes = diffMs / 1000 / 60;
+  
+    return diffMinutes <= 5;
+  };
+
   useEffect(() => {
     fetchAgents();
     const interval = setInterval(fetchAgents, 30000);
@@ -45,8 +60,8 @@ export default function Dashboard() {
   const filtered = agents
   .filter(a => a.name.toLowerCase().includes(search.toLowerCase()))
   .filter(a => {
-    if (statusFilter === 'active') return a.status === 'active';
-    if (statusFilter === 'inactive') return a.status !== 'active';
+    if (statusFilter === 'active') return isAgentReallyActive(a);
+    if (statusFilter === 'inactive') return !isAgentReallyActive(a);
     return true;
   });
 
@@ -68,7 +83,7 @@ export default function Dashboard() {
     if (agents.length > 0) fetchRisks();
   }, [agents]);
 
-  const activeCount = agents.filter(a => a.status === 'active').length;
+  const activeCount = agents.filter(isAgentReallyActive).length;
 
   return (
     <Container maxWidth="xl" sx={{ mt: 3, mb: 4 }}>
@@ -164,7 +179,7 @@ export default function Dashboard() {
               </TableRow>
             ) : (
               filtered.map(agent => {
-                const isActive = agent.status === 'active';
+                const isActive = isAgentReallyActive(agent);
                 const risk = agentRisks[agent.id];
                 const riskLabel = !risk ? { label: '...', color: 'default' } :
                 risk.risk === 'critical' ? { label: `Rizik (${risk.critical} kritičnih)`, color: 'error' } :
