@@ -15,6 +15,7 @@ import { getAgentAlerts } from '../services/api';
 import { translateAlert, severityConfig, isSystemEvent } from '../utils/eventTranslator';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import NetworkCheckIcon from '@mui/icons-material/NetworkCheck';
+import DownloadIcon from '@mui/icons-material/Download';
 import axios from 'axios'
 import ScreenshotDialog from '../components/ScreenshotDialog';
 import NetworkDialog from '../components/NetworkDialog';
@@ -107,6 +108,18 @@ export default function AgentDetails() {
     }
   };
 
+  const downloadLogs = () => {
+    const datum = new Date().toISOString().slice(0, 10);
+    const filename = `logovi_${agentName}_${datum}.json`;
+    const blob = new Blob([JSON.stringify(filtered, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const fetchPorts = async () => {
     try {
       const res = await axios.get(`${API_URL}/api/network/${agentId}/ports`);
@@ -157,6 +170,16 @@ export default function AgentDetails() {
           color="info"
         >
           Mreža
+        </Button>
+
+        <Button
+          variant="outlined"
+          startIcon={<DownloadIcon />}
+          onClick={downloadLogs}
+          color="success"
+          disabled={filtered.length === 0}
+        >
+          Preuzmi logove
         </Button>
       </Box>
 
