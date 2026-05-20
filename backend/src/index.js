@@ -6,6 +6,7 @@ const eventsRouter = require('./routes/events');
 const alertsRouter = require('./routes/alerts');
 const screenshotsRouter = require('./routes/screenshots');
 const networkRouter = require('./routes/network');
+const kolokvijumRouter = require('./routes/kolokvijum');
 
 const app = express();
 app.use(cors());
@@ -26,6 +27,7 @@ app.use('/api/events', eventsRouter);
 app.use('/api/alerts', alertsRouter);
 app.use('/api/screenshots', screenshotsRouter);
 app.use('/api/network', networkRouter);
+app.use('/api/kolokvijum', kolokvijumRouter);
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {

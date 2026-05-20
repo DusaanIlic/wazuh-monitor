@@ -18,3 +18,13 @@ export const getAgentRisk = async (agentId) => {
   const res = await api.get(`/agents/${agentId}/risk`);
   return res.data.data;
 };
+
+export const startKolokvijum = async () => {
+  const res = await api.post('/kolokvijum/start');
+  return res.data;
+};
+
+export const stopKolokvijum = async () => {
+  const res = await api.post('/kolokvijum/stop');
+  return res.data;
+};

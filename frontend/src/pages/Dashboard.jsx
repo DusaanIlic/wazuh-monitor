@@ -4,18 +4,20 @@ import {
   Container, Typography, Box, CircularProgress, Alert,
   Table, TableBody, TableCell, TableContainer, TableHead,
   TableRow, Paper, Chip, IconButton, Tooltip, TextField,
-  InputAdornment,  ToggleButton, ToggleButtonGroup, Divider
+  InputAdornment, ToggleButton, ToggleButtonGroup, Divider, Button
 } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import SearchIcon from '@mui/icons-material/Search';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import TableRowsIcon from '@mui/icons-material/TableRows';
 import SchoolIcon from '@mui/icons-material/School';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import StopIcon from '@mui/icons-material/Stop';
 import { getAgents, getAgentRisk } from '../services/api';
 import { timeAgo } from '../utils/eventTranslator';
 import ClassroomView from '../components/ClassroomView';
 
-export default function Dashboard() {
+export default function Dashboard({ kolokvijumAktivan, onStartKolokvijum, onStopKolokvijum }) {
   const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -108,6 +110,33 @@ export default function Dashboard() {
             <RefreshIcon fontSize="small" />
           </IconButton>
         </Tooltip>
+      </Box>
+
+      {/* Sredina — kolokvijum dugme */}
+      <Box>
+        {kolokvijumAktivan ? (
+          <Button
+            variant="contained"
+            color="error"
+            size="large"
+            startIcon={<StopIcon />}
+            onClick={onStopKolokvijum}
+            sx={{ fontWeight: 'bold', px: 3, py: 1.2, fontSize: '1rem', boxShadow: 3 }}
+          >
+            Zaustavi kolokvijum
+          </Button>
+        ) : (
+          <Button
+            variant="contained"
+            color="success"
+            size="large"
+            startIcon={<PlayArrowIcon />}
+            onClick={onStartKolokvijum}
+            sx={{ fontWeight: 'bold', px: 3, py: 1.2, fontSize: '1rem', boxShadow: 3 }}
+          >
+            Pokreni kolokvijum
+          </Button>
+        )}
       </Box>
 
       {/* Desna strana — statistike */}
