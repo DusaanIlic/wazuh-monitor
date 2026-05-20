@@ -9,8 +9,11 @@ import {
 import RefreshIcon from '@mui/icons-material/Refresh';
 import SearchIcon from '@mui/icons-material/Search';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import TableRowsIcon from '@mui/icons-material/TableRows';
+import SchoolIcon from '@mui/icons-material/School';
 import { getAgents, getAgentRisk } from '../services/api';
 import { timeAgo } from '../utils/eventTranslator';
+import ClassroomView from '../components/ClassroomView';
 
 export default function Dashboard() {
   const [agents, setAgents] = useState([]);
@@ -20,6 +23,7 @@ export default function Dashboard() {
   const [lastRefresh, setLastRefresh] = useState(new Date());
   const [statusFilter, setStatusFilter] = useState('all');
   const [agentRisks, setAgentRisks] = useState({});
+  const [viewMode, setViewMode] = useState(() => localStorage.getItem('dashboardViewMode') ?? 'lista');
   const navigate = useNavigate();
 
   const fetchAgents = async () => {
@@ -83,6 +87,10 @@ export default function Dashboard() {
     if (agents.length > 0) fetchRisks();
   }, [agents]);
 
+  useEffect(() => {
+    localStorage.setItem('dashboardViewMode', viewMode);
+  }, [viewMode]);
+
   const activeCount = agents.filter(isAgentReallyActive).length;
 
   return (
@@ -122,8 +130,8 @@ export default function Dashboard() {
 
 </Box>
   
-      {/* Search i Filter u jednom redu */}
-      <Box display="flex" alignItems="center" gap={2} mb={2}>
+      {/* Search, Filter i View toggle u jednom redu */}
+      <Box display="flex" alignItems="center" gap={2} mb={2} flexWrap="wrap">
         <TextField
           size="small"
           placeholder="Pretraži po imenu računara..."
@@ -148,12 +156,50 @@ export default function Dashboard() {
           <ToggleButton value="active" color="success">Aktivni ({activeCount})</ToggleButton>
           <ToggleButton value="inactive" color="error">Neaktivni ({agents.length - activeCount})</ToggleButton>
         </ToggleButtonGroup>
+
+        <ToggleButtonGroup
+          value={viewMode}
+          exclusive
+          onChange={(e, val) => { if (val !== null) setViewMode(val); }}
+          size="small"
+          sx={{ ml: 'auto' }}
+        >
+          <ToggleButton value="lista">
+            <Tooltip title="Prikaz liste">
+              <TableRowsIcon fontSize="small" />
+            </Tooltip>
+          </ToggleButton>
+          <ToggleButton value="ucionica">
+            <Tooltip title="Prikaz učionice">
+              <SchoolIcon fontSize="small" />
+            </Tooltip>
+          </ToggleButton>
+        </ToggleButtonGroup>
       </Box>
   
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-  
+
+      {/* Prikaz učionice */}
+      {viewMode === 'ucionica' && (
+        <Box sx={{ mt: 2 }}>
+          {loading ? (
+            <Box display="flex" justifyContent="center" py={4}>
+              <CircularProgress size={30} />
+            </Box>
+          ) : (
+            <ClassroomView
+              agents={filtered.map(agent => ({
+                ...agent,
+                criticalAlerts: agentRisks[agent.id]?.critical ?? 0,
+              }))}
+              onAgentClick={agent => navigate(`/agent/${agent.id}`)}
+            />
+          )}
+        </Box>
+      )}
+
       {/* Tabela */}
-      <TableContainer component={Paper} sx={{ mt: 2 }}>
+      {viewMode === 'lista' && <TableContainer component={Paper} sx={{ mt: 2 }}>
         <Table>
           <TableHead>
             <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
@@ -217,7 +263,7 @@ export default function Dashboard() {
             )}
           </TableBody>
         </Table>
-      </TableContainer>
+      </TableContainer>}
     </Container>
   );
 }
