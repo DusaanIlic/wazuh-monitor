@@ -38,17 +38,33 @@ export function isSystemEvent(alert) {
   );
 }
 
+const copilotPatterns = ['copilot', 'github copilot', 'microsoft copilot'];
+
+function isCopilotRelated(path, processName) {
+  const lPath = path.toLowerCase();
+  const lProc = processName.toLowerCase();
+  return (
+    copilotPatterns.some(p => lPath.includes(p)) ||
+    copilotPatterns.some(p => lProc.includes(p)) ||
+    lProc === 'copilot.exe'
+  );
+}
+
 export function translateAlert(alert) {
   const ruleId = parseInt(alert.rule?.id);
   const groups = alert.rule?.groups || [];
   const path = alert.syscheck?.path || '';
-  const user = alert.data?.win?.eventdata?.subjectUserName || 
+  const processName = alert.data?.win?.eventdata?.processName || '';
+  const user = alert.data?.win?.eventdata?.subjectUserName ||
                alert.data?.win?.eventdata?.targetUserName || '';
+
+  if (isCopilotRelated(path, processName)) {
+    return { msg: 'Pokrenuti AI asistent (Copilot)', severity: 'critical', user };
+  }
 
   if (ruleIdMessages[ruleId]) {
     return { ...ruleIdMessages[ruleId], user };
   }
-
 
   if (path.toLowerCase().includes('\\temp\\') || path.toLowerCase().includes('/tmp/')) {
     return { msg: 'Aktivnost u privremenom folderu (Temp)', severity: 'critical', user };
