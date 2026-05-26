@@ -1,7 +1,8 @@
 import axios from 'axios';
+import { API_URL } from '../config';
 
 const api = axios.create({
-  baseURL: 'http://147.91.204.137:3001/api',
+  baseURL: `${API_URL}/api`,
 });
 
 export const getAgents = async () => {

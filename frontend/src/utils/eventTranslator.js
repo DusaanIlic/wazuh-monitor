@@ -26,6 +26,7 @@ export const severityConfig = {
   critical: { color: 'error', label: 'Kritično', priority: 3, bg: '#fff5f5' },
   warning: { color: 'warning', label: 'Upozorenje', priority: 2, bg: '#fffde7' },
   info: { color: 'info', label: 'Info', priority: 1, bg: '#f5f9ff' },
+  ignore: { color: 'default', label: 'Ignorisano', priority: 0, bg: '#f5f5f5' },
 };
 
 export function isSystemEvent(alert) {
@@ -50,6 +51,14 @@ function isCopilotRelated(path, processName) {
   );
 }
 
+function loadWatchRules() {
+  try {
+    return JSON.parse(localStorage.getItem('watchRules') || '[]');
+  } catch {
+    return [];
+  }
+}
+
 export function translateAlert(alert) {
   const ruleId = parseInt(alert.rule?.id);
   const groups = alert.rule?.groups || [];
@@ -57,6 +66,19 @@ export function translateAlert(alert) {
   const processName = alert.data?.win?.eventdata?.processName || '';
   const user = alert.data?.win?.eventdata?.subjectUserName ||
                alert.data?.win?.eventdata?.targetUserName || '';
+
+  const watchRules = loadWatchRules();
+  console.log('[translateAlert] watchRules:', watchRules, '| path:', path, '| processName:', processName);
+  for (const rule of watchRules) {
+    if (!rule.pattern) continue;
+    const lPat = rule.pattern.toLowerCase();
+    const pathMatch = path.toLowerCase().includes(lPat);
+    const procMatch = processName.toLowerCase().includes(lPat);
+    console.log(`[translateAlert] rule "${rule.naziv}" pattern="${lPat}" | pathMatch=${pathMatch} procMatch=${procMatch}`);
+    if (pathMatch || procMatch) {
+      return { msg: rule.naziv, severity: rule.akcija, user, customRule: true };
+    }
+  }
 
   if (isCopilotRelated(path, processName)) {
     return { msg: 'Pokrenuti AI asistent (Copilot)', severity: 'critical', user };

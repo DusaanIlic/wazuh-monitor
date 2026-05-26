@@ -50,6 +50,7 @@ export default function AgentDetails() {
     const fetchAlerts = async () => {
       try {
         const data = await getAgentAlerts(agentId, 200, timeRange);
+        console.log('Alerte dobijene:', data);
         const translated = data.map(a => ({
           ...a,
           translated: translateAlert(a),
@@ -82,6 +83,7 @@ export default function AgentDetails() {
   }, [agentId]);
 
   const filtered = hideSystem ? alerts.filter(a => !a.isSystem) : alerts;
+  console.log('Filtered:', filtered, '| hideSystem:', hideSystem, '| total alerts:', alerts.length);
   const criticalCount = filtered.filter(e => e.translated.severity === 'critical').length;
   const warningCount = filtered.filter(e => e.translated.severity === 'warning').length;
 

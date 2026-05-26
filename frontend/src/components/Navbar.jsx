@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
-import { AppBar, Toolbar, Typography, Box, Chip } from '@mui/material';
+import { AppBar, Toolbar, Typography, Box, Chip, Tooltip, IconButton } from '@mui/material';
 import SecurityIcon from '@mui/icons-material/Security';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
+import SettingsIcon from '@mui/icons-material/Settings';
+import { useNavigate } from 'react-router-dom';
 
 function formatElapsed(seconds) {
   const h = Math.floor(seconds / 3600);
@@ -13,6 +15,7 @@ function formatElapsed(seconds) {
 
 export default function Navbar({ kolokvijumAktivan, kolokvijumPocetak }) {
   const [elapsed, setElapsed] = useState(0);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!kolokvijumAktivan || !kolokvijumPocetak) {
@@ -45,7 +48,14 @@ export default function Navbar({ kolokvijumAktivan, kolokvijumPocetak }) {
           </Box>
         </Box>
 
-        {kolokvijumAktivan && (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Tooltip title="Pravila praćenja">
+            <IconButton color="inherit" onClick={() => navigate('/rules')}>
+              <SettingsIcon />
+            </IconButton>
+          </Tooltip>
+
+          {kolokvijumAktivan && (
           <Chip
             icon={
               <FiberManualRecordIcon
@@ -66,7 +76,8 @@ export default function Navbar({ kolokvijumAktivan, kolokvijumPocetak }) {
               },
             }}
           />
-        )}
+          )}
+        </Box>
       </Toolbar>
     </AppBar>
   );
