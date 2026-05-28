@@ -159,14 +159,14 @@ export default function Dashboard({ kolokvijumAktivan, onStartKolokvijum, onStop
 
 </Box>
   
-      {/* Search, Filter i View toggle u jednom redu */}
-      <Box display="flex" alignItems="center" gap={2} mb={2} flexWrap="wrap">
+      {/* Search, Filter, View toggle i Legenda u jednom redu */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'nowrap', mb: 2 }}>
         <TextField
           size="small"
           placeholder="Pretraži po imenu računara..."
           value={search}
           onChange={e => setSearch(e.target.value)}
-          sx={{ width: 280 }}
+          sx={{ width: 240, flexShrink: 0 }}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -180,18 +180,18 @@ export default function Dashboard({ kolokvijumAktivan, onStartKolokvijum, onStop
           exclusive
           onChange={(e, val) => { if (val !== null) setStatusFilter(val); }}
           size="small"
+          sx={{ flexShrink: 0 }}
         >
           <ToggleButton value="all">Svi ({agents.length})</ToggleButton>
           <ToggleButton value="active" color="success">Aktivni ({activeCount})</ToggleButton>
           <ToggleButton value="inactive" color="error">Neaktivni ({agents.length - activeCount})</ToggleButton>
         </ToggleButtonGroup>
-
         <ToggleButtonGroup
           value={viewMode}
           exclusive
           onChange={(e, val) => { if (val !== null) setViewMode(val); }}
           size="small"
-          sx={{ ml: 'auto' }}
+          sx={{ flexShrink: 0 }}
         >
           <ToggleButton value="lista">
             <Tooltip title="Prikaz liste">
@@ -204,6 +204,26 @@ export default function Dashboard({ kolokvijumAktivan, onStartKolokvijum, onStop
             </Tooltip>
           </ToggleButton>
         </ToggleButtonGroup>
+        {viewMode === 'ucionica' && (
+          <>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Box sx={{ width: 14, height: 14, bgcolor: 'error.main', borderRadius: '7px', flexShrink: 0 }} />
+              <Typography variant="caption" color="text.secondary" noWrap>Kritični alertovi (neovlašćen pristup, sumnjiv proces, USB uređaj...)</Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Box sx={{ width: 14, height: 14, bgcolor: 'warning.main', borderRadius: '7px', flexShrink: 0 }} />
+              <Typography variant="caption" color="text.secondary" noWrap>Upozorenja (promena fajla, mrežna aktivnost...)</Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Box sx={{ width: 14, height: 14, border: '2px solid', borderColor: 'success.light', borderRadius: 0.5, flexShrink: 0 }} />
+              <Typography variant="caption" color="text.secondary" noWrap>Aktivan</Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Box sx={{ width: 14, height: 14, bgcolor: 'action.disabledBackground', border: '1px solid', borderColor: 'divider', borderRadius: 0.5, flexShrink: 0 }} />
+              <Typography variant="caption" color="text.secondary" noWrap>Nije povezan</Typography>
+            </Box>
+          </>
+        )}
       </Box>
   
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
@@ -216,37 +236,13 @@ export default function Dashboard({ kolokvijumAktivan, onStartKolokvijum, onStop
               <CircularProgress size={30} />
             </Box>
           ) : (
-            <>
-              <ClassroomView
-                agents={filtered.map(agent => ({
-                  ...agent,
-                  criticalAlerts: agentRisks[agent.id]?.critical ?? 0,
-                }))}
-                onAgentClick={agent => navigate(`/agent/${agent.id}`)}
-              />
-              <Box sx={{ mt: 1.5, pl: 1, display: 'flex', flexWrap: 'wrap', gap: 2.5 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
-                  <Box sx={{ width: 18, height: 18, bgcolor: 'error.main', borderRadius: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Typography sx={{ color: 'white', fontSize: 9, fontWeight: 'bold', lineHeight: 1 }}>🔴</Typography>
-                  </Box>
-                  <Typography variant="caption" color="text.secondary">Kritični alerti (neovlašćen pristup, sumnjiv proces, USB uređaj...)</Typography>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
-                  <Box sx={{ width: 18, height: 18, bgcolor: 'warning.main', borderRadius: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Typography sx={{ color: 'white', fontSize: 9, fontWeight: 'bold', lineHeight: 1 }}>⚠️</Typography>
-                  </Box>
-                  <Typography variant="caption" color="text.secondary">Upozorenja (promena fajla, mrežna aktivnost...)</Typography>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
-                  <Box sx={{ width: 18, height: 18, border: '2px solid', borderColor: 'success.light', borderRadius: 0.5 }} />
-                  <Typography variant="caption" color="text.secondary">Računar aktivan</Typography>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
-                  <Box sx={{ width: 18, height: 18, bgcolor: 'action.disabledBackground', border: '1px solid', borderColor: 'divider', borderRadius: 0.5 }} />
-                  <Typography variant="caption" color="text.secondary">Računar nije povezan</Typography>
-                </Box>
-              </Box>
-            </>
+            <ClassroomView
+              agents={filtered.map(agent => ({
+                ...agent,
+                criticalAlerts: agentRisks[agent.id]?.critical ?? 0,
+              }))}
+              onAgentClick={agent => navigate(`/agent/${agent.id}`)}
+            />
           )}
         </Box>
       )}
