@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Dashboard from './pages/Dashboard';
 import AgentDetails from './pages/AgentDetails';
 import RulesPage from './pages/RulesPage';
-import { startKolokvijum, stopKolokvijum } from './services/api';
+import { startKolokvijum, stopKolokvijum, getKolokvijumStatus } from './services/api';
 
 function App() {
   const [kolokvijumAktivan, setKolokvijumAktivan] = useState(
@@ -14,16 +14,25 @@ function App() {
     () => localStorage.getItem('kolokvijumPocetak') || null
   );
 
+  useEffect(() => {
+    getKolokvijumStatus().then(status => {
+      setKolokvijumAktivan(!!status?.isActive);
+      setKolokvijumPocetak(status?.startTime || null);
+      localStorage.setItem('kolokvijumAktivan', status?.isActive ? 'true' : 'false');
+      if (status?.startTime) localStorage.setItem('kolokvijumPocetak', status.startTime);
+      else localStorage.removeItem('kolokvijumPocetak');
+    }).catch(() => {});
+  }, []);
+
   const handleStart = async () => {
     try {
       const res = await startKolokvijum();
-      const pocetak = res.pocetak;
+      const pocetak = res.startTime;
       localStorage.setItem('kolokvijumAktivan', 'true');
       localStorage.setItem('kolokvijumPocetak', pocetak);
       setKolokvijumAktivan(true);
       setKolokvijumPocetak(pocetak);
     } catch {
-      // backend nedostupan — postavljamo lokalno
       const pocetak = new Date().toISOString();
       localStorage.setItem('kolokvijumAktivan', 'true');
       localStorage.setItem('kolokvijumPocetak', pocetak);

@@ -11,7 +11,7 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import ErrorIcon from '@mui/icons-material/Error';
 import InfoIcon from '@mui/icons-material/Info';
 import PersonIcon from '@mui/icons-material/Person';
-import { getAgentAlerts } from '../services/api';
+import { getAgentAlerts, getAgentAlertsFrom, getKolokvijumStatus } from '../services/api';
 import { translateAlert, severityConfig, isSystemEvent } from '../utils/eventTranslator';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import NetworkCheckIcon from '@mui/icons-material/NetworkCheck';
@@ -45,11 +45,21 @@ export default function AgentDetails() {
   const [networkPage, setNetworkPage] = useState(0);
   const [networkRowsPerPage, setNetworkRowsPerPage] = useState(3);
   const [timeRange, setTimeRange] = useState('24h');
+  const [kolokvijum, setKolokvijum] = useState(null);
 
   useEffect(() => {
     const fetchAlerts = async () => {
       try {
-        const data = await getAgentAlerts(agentId, 200, timeRange);
+        const status = await getKolokvijumStatus();
+        setKolokvijum(status);
+
+        let data;
+        if (status?.isActive && status?.startTime) {
+          console.log('[AgentDetails] kolokvijum aktivan, fetch od:', status.startTime);
+          data = await getAgentAlertsFrom(agentId, status.startTime);
+        } else {
+          data = [];
+        }
         console.log('Alerte dobijene:', data);
         const translated = data.map(a => ({
           ...a,
@@ -204,42 +214,60 @@ export default function AgentDetails() {
           <Typography variant="body2" color="text.secondary">
             Prikaz detektovanih aktivnosti
           </Typography>
-          <Box display="flex" flexDirection="row" gap={1} alignItems="center" mt={1}>
-            {criticalCount > 0 && (
-              <Chip icon={<ErrorIcon />} label={`${criticalCount} kritičnih`} color="error" />
-            )}
-            {warningCount > 0 && (
-              <Chip icon={<WarningAmberIcon />} label={`${warningCount} upozorenja`} color="warning" />
-            )}
-            {criticalCount === 0 && warningCount === 0 && !loading && (
-              <Chip label="Bez nepravilnosti" color="success" />
-            )}
-          </Box>
+          {kolokvijum?.isActive && (
+            <Box display="flex" flexDirection="row" gap={1} alignItems="center" mt={1}>
+              {criticalCount > 0 && (
+                <Chip icon={<ErrorIcon />} label={`${criticalCount} kritičnih`} color="error" />
+              )}
+              {warningCount > 0 && (
+                <Chip icon={<WarningAmberIcon />} label={`${warningCount} upozorenja`} color="warning" />
+              )}
+              {criticalCount === 0 && warningCount === 0 && !loading && (
+                <Chip label="Bez nepravilnosti" color="success" />
+              )}
+            </Box>
+          )}
         </Box>
 
-        <Box display="flex" flexDirection="row" alignItems="center" gap={1}>
-          <Typography variant="body2" sx={{ whiteSpace: 'nowrap' }}>Prikaži:</Typography>
-          <ToggleButtonGroup
-            value={timeRange}
-            exclusive
-            onChange={(e, val) => { if (val) setTimeRange(val); }}
-            size="small"
-          >
-            <ToggleButton value="1h">Poslednjih sat</ToggleButton>
-            <ToggleButton value="24h">Poslednjih 24h</ToggleButton>
-            <ToggleButton value="7d">Poslednjih 7 dana</ToggleButton>
-          </ToggleButtonGroup>
-        </Box>
+        {!kolokvijum?.isActive && (
+          <Box display="flex" flexDirection="row" alignItems="center" gap={1}>
+            <Typography variant="body2" sx={{ whiteSpace: 'nowrap' }}>Prikaži:</Typography>
+            <ToggleButtonGroup
+              value={timeRange}
+              exclusive
+              onChange={(e, val) => { if (val) setTimeRange(val); }}
+              size="small"
+            >
+              <ToggleButton value="1h">Poslednjih sat</ToggleButton>
+              <ToggleButton value="24h">Poslednjih 24h</ToggleButton>
+              <ToggleButton value="7d">Poslednjih 7 dana</ToggleButton>
+            </ToggleButtonGroup>
+          </Box>
+        )}
       </Box>
 
-      <FormControlLabel
-        control={<Switch checked={hideSystem} onChange={e => setHideSystem(e.target.checked)} />}
-        label="Sakrij sistemske procese (SYSTEM, NT AUTHORITY...)"
-        onChange={e => { setHideSystem(e.target.checked); setPage(0); }}
-        sx={{ mb: 2 }}
-      />
+      {kolokvijum?.isActive && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          {`Kolokvijum aktivan — prikazuju se alerti od ${new Date(kolokvijum.startTime).toLocaleTimeString('sr-RS')}`}
+        </Alert>
+      )}
 
-      {!loading && filtered.length > 0 && (
+      {kolokvijum !== null && !kolokvijum.isActive && (
+        <Alert severity="info" sx={{ mt: 2 }}>
+          Pokrenite kolokvijum da biste počeli sa praćenjem aktivnosti.
+        </Alert>
+      )}
+
+      {kolokvijum?.isActive && (
+        <FormControlLabel
+          control={<Switch checked={hideSystem} onChange={e => setHideSystem(e.target.checked)} />}
+          label="Sakrij sistemske procese (SYSTEM, NT AUTHORITY...)"
+          onChange={e => { setHideSystem(e.target.checked); setPage(0); }}
+          sx={{ mb: 2 }}
+        />
+      )}
+
+      {kolokvijum?.isActive && !loading && filtered.length > 0 && (
         <Paper>
           <List disablePadding>
             {filtered
@@ -302,7 +330,7 @@ export default function AgentDetails() {
         </Paper>
       )}
 
-      {!loading && filtered.length === 0 && !error && (
+      {kolokvijum?.isActive && !loading && filtered.length === 0 && !error && (
         <Alert severity="success">
           Nisu detektovane nikakve nepravilnosti na ovom računaru.
         </Alert>

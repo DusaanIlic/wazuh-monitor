@@ -1,24 +1,47 @@
 const express = require('express');
 const router = express.Router();
+const fs = require('fs');
+const path = require('path');
 
-let stanje = {
-  aktivan: false,
-  pocetak: null,
-  kraj: null,
-};
+const STATE_FILE = path.join(__dirname, '../../kolokvijum-state.json');
+
+function loadState() {
+  try {
+    if (fs.existsSync(STATE_FILE)) {
+      return JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
+    }
+  } catch {}
+  return { isActive: false, startTime: null, endTime: null };
+}
+
+function saveState(s) {
+  try {
+    fs.writeFileSync(STATE_FILE, JSON.stringify(s, null, 2), 'utf8');
+  } catch (err) {
+    console.error('[kolokvijum] greška pri čuvanju stanja:', err.message);
+  }
+}
+
+let state = loadState();
 
 router.post('/start', (req, res) => {
-  stanje = { aktivan: true, pocetak: new Date().toISOString(), kraj: null };
-  res.json({ success: true, pocetak: stanje.pocetak });
+  state = { isActive: true, startTime: new Date().toISOString(), endTime: null };
+  saveState(state);
+  res.json({ startTime: state.startTime, status: 'aktivan' });
 });
 
 router.post('/stop', (req, res) => {
-  stanje = { ...stanje, aktivan: false, kraj: new Date().toISOString() };
-  res.json({ success: true, kraj: stanje.kraj });
+  const endTime = new Date().toISOString();
+  const trajanje = state.startTime
+    ? Math.round((new Date(endTime) - new Date(state.startTime)) / 60000)
+    : 0;
+  state = { ...state, isActive: false, endTime };
+  saveState(state);
+  res.json({ startTime: state.startTime, endTime, trajanje, status: 'zavrsen' });
 });
 
 router.get('/status', (req, res) => {
-  res.json({ data: stanje });
+  res.json({ data: state });
 });
 
 module.exports = router;

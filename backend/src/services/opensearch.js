@@ -151,9 +151,12 @@ async function searchCopilotAlerts(agentId, filters = {}) {
   return response.data.hits.hits.map(h => h._source);
 }
 
-async function searchAgentAlerts(agentId, timeRange = '24h') {
+async function searchAgentAlerts(agentId, timeRange = '24h', from = null) {
   const validRanges = ['1h', '24h', '7d'];
   const range = validRanges.includes(timeRange) ? timeRange : '24h';
+  const timestampFilter = from
+    ? { gte: from, lte: 'now' }
+    : { gte: `now-${range}`, lte: 'now' };
 
   const query = {
     size: 200,
@@ -163,7 +166,7 @@ async function searchAgentAlerts(agentId, timeRange = '24h') {
       bool: {
         must: [
           { term: { 'agent.id': agentId } },
-          { range: { '@timestamp': { gte: `now-${range}`, lte: 'now' } } }
+          { range: { '@timestamp': timestampFilter } }
         ]
       }
     }

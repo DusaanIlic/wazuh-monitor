@@ -216,13 +216,37 @@ export default function Dashboard({ kolokvijumAktivan, onStartKolokvijum, onStop
               <CircularProgress size={30} />
             </Box>
           ) : (
-            <ClassroomView
-              agents={filtered.map(agent => ({
-                ...agent,
-                criticalAlerts: agentRisks[agent.id]?.critical ?? 0,
-              }))}
-              onAgentClick={agent => navigate(`/agent/${agent.id}`)}
-            />
+            <>
+              <ClassroomView
+                agents={filtered.map(agent => ({
+                  ...agent,
+                  criticalAlerts: agentRisks[agent.id]?.critical ?? 0,
+                }))}
+                onAgentClick={agent => navigate(`/agent/${agent.id}`)}
+              />
+              <Box sx={{ mt: 1.5, pl: 1, display: 'flex', flexWrap: 'wrap', gap: 2.5 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
+                  <Box sx={{ width: 18, height: 18, bgcolor: 'error.main', borderRadius: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Typography sx={{ color: 'white', fontSize: 9, fontWeight: 'bold', lineHeight: 1 }}>🔴</Typography>
+                  </Box>
+                  <Typography variant="caption" color="text.secondary">Kritični alerti (neovlašćen pristup, sumnjiv proces, USB uređaj...)</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
+                  <Box sx={{ width: 18, height: 18, bgcolor: 'warning.main', borderRadius: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Typography sx={{ color: 'white', fontSize: 9, fontWeight: 'bold', lineHeight: 1 }}>⚠️</Typography>
+                  </Box>
+                  <Typography variant="caption" color="text.secondary">Upozorenja (promena fajla, mrežna aktivnost...)</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
+                  <Box sx={{ width: 18, height: 18, border: '2px solid', borderColor: 'success.light', borderRadius: 0.5 }} />
+                  <Typography variant="caption" color="text.secondary">Računar aktivan</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
+                  <Box sx={{ width: 18, height: 18, bgcolor: 'action.disabledBackground', border: '1px solid', borderColor: 'divider', borderRadius: 0.5 }} />
+                  <Typography variant="caption" color="text.secondary">Računar nije povezan</Typography>
+                </Box>
+              </Box>
+            </>
           )}
         </Box>
       )}

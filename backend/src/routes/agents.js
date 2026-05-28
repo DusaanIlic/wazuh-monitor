@@ -38,8 +38,8 @@ router.get('/:agentId/risk', async (req, res) => {
 router.get('/:id/alerts', async (req, res) => {
   try {
     const { id } = req.params;
-    const { timeRange = '24h' } = req.query;
-    const alerts = await searchAgentAlerts(id, timeRange);
+    const { timeRange = '24h', from } = req.query;
+    const alerts = await searchAgentAlerts(id, timeRange, from || null);
     res.json({ data: alerts });
   } catch (err) {
     res.status(500).json({ error: err.message });

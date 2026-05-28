@@ -20,6 +20,21 @@ export const getAgentRisk = async (agentId) => {
   return res.data.data;
 };
 
+export const getAgentAlertsBadge = async (agentId, timeRange = '24h') => {
+  const res = await api.get(`/agents/${agentId}/alerts?timeRange=${timeRange}`);
+  return res.data.data || [];
+};
+
+export const getKolokvijumStatus = async () => {
+  const res = await api.get('/kolokvijum/status');
+  return res.data.data;
+};
+
+export const getAgentAlertsFrom = async (agentId, from) => {
+  const res = await api.get(`/agents/${agentId}/alerts`, { params: { from } });
+  return res.data.data || [];
+};
+
 export const startKolokvijum = async () => {
   const res = await api.post('/kolokvijum/start');
   return res.data;
