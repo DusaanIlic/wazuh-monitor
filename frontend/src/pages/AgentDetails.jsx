@@ -82,8 +82,17 @@ export default function AgentDetails() {
     fetchAgentName();
   }, [agentId]);
 
-  const filtered = hideSystem ? alerts.filter(a => !a.isSystem) : alerts;
-  console.log('Filtered:', filtered, '| hideSystem:', hideSystem, '| total alerts:', alerts.length);
+  const filtered = hideSystem
+    ? alerts.filter(a => {
+        const keep = !a.isSystem;
+        const user = a.data?.win?.eventdata?.subjectUserName || a.data?.win?.eventdata?.targetUserName || '(bez korisnika)';
+        console.log(
+          `[filter] ruleId=${a.rule?.id} | syscheck=${!!a.syscheck} | isSystem=${a.isSystem} | user="${user}" | ${keep ? 'PRIKAZANO' : 'FILTRIRANO'}`
+        );
+        return keep;
+      })
+    : alerts;
+  console.log(`[filter] ukupno=${alerts.length} | prikazano=${filtered.length} | hideSystem=${hideSystem}`);
   const criticalCount = filtered.filter(e => e.translated.severity === 'critical').length;
   const warningCount = filtered.filter(e => e.translated.severity === 'warning').length;
 

@@ -151,4 +151,37 @@ async function searchCopilotAlerts(agentId, filters = {}) {
   return response.data.hits.hits.map(h => h._source);
 }
 
-module.exports = { searchAlerts, searchTempActivity, searchCopilotAlerts };
+async function searchAgentAlerts(agentId, timeRange = '24h') {
+  const validRanges = ['1h', '24h', '7d'];
+  const range = validRanges.includes(timeRange) ? timeRange : '24h';
+
+  const query = {
+    size: 200,
+    sort: [{ '@timestamp': { order: 'desc' } }],
+    _source: ['rule', 'data', 'syscheck', '@timestamp', 'agent'],
+    query: {
+      bool: {
+        must: [
+          { term: { 'agent.id': agentId } },
+          { range: { '@timestamp': { gte: `now-${range}`, lte: 'now' } } }
+        ]
+      }
+    }
+  };
+
+  const response = await axios.post(
+    `${process.env.OPENSEARCH_URL}/wazuh-alerts-4.x-*/_search`,
+    query,
+    {
+      auth: {
+        username: process.env.OPENSEARCH_USER,
+        password: process.env.OPENSEARCH_PASSWORD,
+      },
+      httpsAgent: agent,
+    }
+  );
+
+  return response.data.hits.hits.map(h => h._source);
+}
+
+module.exports = { searchAlerts, searchTempActivity, searchCopilotAlerts, searchAgentAlerts };

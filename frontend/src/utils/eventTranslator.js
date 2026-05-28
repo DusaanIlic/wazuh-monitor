@@ -30,10 +30,11 @@ export const severityConfig = {
 };
 
 export function isSystemEvent(alert) {
+  if (alert.syscheck) return false;
   const user = alert.data?.win?.eventdata?.subjectUserName || '';
   const targetUser = alert.data?.win?.eventdata?.targetUserName || '';
-  return systemUsers.some(u => 
-    user.toUpperCase() === u || 
+  return systemUsers.some(u =>
+    user.toUpperCase() === u ||
     targetUser.toUpperCase() === u ||
     user.endsWith('$')
   );
@@ -63,25 +64,38 @@ export function translateAlert(alert) {
   const ruleId = parseInt(alert.rule?.id);
   const groups = alert.rule?.groups || [];
   const path = alert.syscheck?.path || '';
-  const processName = alert.data?.win?.eventdata?.processName || '';
+  const image = alert.data?.win?.eventdata?.image || '';
+  const parentImage = alert.data?.win?.eventdata?.parentImage || '';
+  const commandLine = alert.data?.win?.eventdata?.commandLine || '';
+  const processName = alert.data?.win?.eventdata?.processName || image || '';
   const user = alert.data?.win?.eventdata?.subjectUserName ||
                alert.data?.win?.eventdata?.targetUserName || '';
 
   const watchRules = loadWatchRules();
-  console.log('[translateAlert] watchRules:', watchRules, '| path:', path, '| processName:', processName);
+  console.log('[translateAlert] path:', path, '| processName:', processName, '| image:', image, '| parentImage:', parentImage, '| cmdLine:', commandLine);
   for (const rule of watchRules) {
     if (!rule.pattern) continue;
     const lPat = rule.pattern.toLowerCase();
     const pathMatch = path.toLowerCase().includes(lPat);
     const procMatch = processName.toLowerCase().includes(lPat);
-    console.log(`[translateAlert] rule "${rule.naziv}" pattern="${lPat}" | pathMatch=${pathMatch} procMatch=${procMatch}`);
-    if (pathMatch || procMatch) {
+    const imageMatch = image.toLowerCase().includes(lPat);
+    const parentMatch = parentImage.toLowerCase().includes(lPat);
+    const cmdMatch = commandLine.toLowerCase().includes(lPat);
+    console.log(`[translateAlert] rule "${rule.naziv}" pattern="${lPat}" | pathMatch=${pathMatch} procMatch=${procMatch} imageMatch=${imageMatch} parentMatch=${parentMatch} cmdMatch=${cmdMatch}`);
+    if (pathMatch || procMatch || imageMatch || parentMatch || cmdMatch) {
       return { msg: rule.naziv, severity: rule.akcija, user, customRule: true };
     }
   }
 
-  if (isCopilotRelated(path, processName)) {
-    return { msg: 'Pokrenuti AI asistent (Copilot)', severity: 'critical', user };
+  if (commandLine.toLowerCase().includes('net stop wazuh') ||
+      commandLine.toLowerCase().includes('net stop')) {
+    return { msg: 'Pokušaj zaustavljanja Wazuh agenta!', severity: 'critical', user };
+  }
+
+  if (isCopilotRelated(path, processName) ||
+      isCopilotRelated(image, parentImage) ||
+      copilotPatterns.some(p => commandLine.toLowerCase().includes(p))) {
+    return { msg: 'Pokrenut AI asistent (Copilot)', severity: 'critical', user };
   }
 
   if (ruleIdMessages[ruleId]) {

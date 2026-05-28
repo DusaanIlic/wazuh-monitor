@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { apiRequest } = require('../services/wazuhApi');
-const { searchAlerts } = require('../services/opensearch');
+const { searchAlerts, searchAgentAlerts } = require('../services/opensearch');
 
 // Dohvati sve agente
 router.get('/', async (req, res) => {
@@ -29,6 +29,18 @@ router.get('/:agentId/risk', async (req, res) => {
     else if (warning > 3) risk = 'warning';
     
     res.json({ data: { risk, critical, warning, total: alerts.length } });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Alertovi za agenta iz OpenSearch
+router.get('/:id/alerts', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { timeRange = '24h' } = req.query;
+    const alerts = await searchAgentAlerts(id, timeRange);
+    res.json({ data: alerts });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
