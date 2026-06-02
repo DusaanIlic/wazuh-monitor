@@ -44,3 +44,8 @@ export const stopKolokvijum = async () => {
   const res = await api.post('/kolokvijum/stop');
   return res.data;
 };
+
+export const getIstorijaKolokvijuma = async () => {
+  const res = await api.get('/kolokvijum/istorija');
+  return res.data.data;
+};

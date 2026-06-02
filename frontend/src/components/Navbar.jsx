@@ -3,6 +3,7 @@ import { AppBar, Toolbar, Typography, Box, Chip, Tooltip, IconButton } from '@mu
 import SecurityIcon from '@mui/icons-material/Security';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import SettingsIcon from '@mui/icons-material/Settings';
+import HistoryIcon from '@mui/icons-material/History';
 import { useNavigate } from 'react-router-dom';
 
 function formatElapsed(seconds) {
@@ -49,6 +50,12 @@ export default function Navbar({ kolokvijumAktivan, kolokvijumPocetak }) {
         </Box>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Tooltip title="Istorija kolokvijuma">
+            <IconButton color="inherit" onClick={() => navigate('/istorija')}>
+              <HistoryIcon />
+            </IconButton>
+          </Tooltip>
+
           <Tooltip title="Pravila praćenja">
             <IconButton color="inherit" onClick={() => navigate('/rules')}>
               <SettingsIcon />
