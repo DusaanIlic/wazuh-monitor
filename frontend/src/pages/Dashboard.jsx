@@ -204,7 +204,7 @@ export default function Dashboard({ kolokvijumAktivan, onStartKolokvijum, onStop
             </Tooltip>
           </ToggleButton>
         </ToggleButtonGroup>
-        {viewMode === 'ucionica' && (
+        {(viewMode === 'ucionica' || viewMode === 'lista') && (
           <>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
               <Box sx={{ width: 14, height: 14, bgcolor: 'error.main', borderRadius: '7px', flexShrink: 0 }} />
@@ -214,14 +214,18 @@ export default function Dashboard({ kolokvijumAktivan, onStartKolokvijum, onStop
               <Box sx={{ width: 14, height: 14, bgcolor: 'warning.main', borderRadius: '7px', flexShrink: 0 }} />
               <Typography variant="caption" color="text.secondary" noWrap>Upozorenja (promena fajla, mrežna aktivnost...)</Typography>
             </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <Box sx={{ width: 14, height: 14, border: '2px solid', borderColor: 'success.light', borderRadius: 0.5, flexShrink: 0 }} />
-              <Typography variant="caption" color="text.secondary" noWrap>Aktivan</Typography>
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <Box sx={{ width: 14, height: 14, bgcolor: 'action.disabledBackground', border: '1px solid', borderColor: 'divider', borderRadius: 0.5, flexShrink: 0 }} />
-              <Typography variant="caption" color="text.secondary" noWrap>Nije povezan</Typography>
-            </Box>
+            {viewMode === 'ucionica' && (
+              <>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <Box sx={{ width: 14, height: 14, border: '2px solid', borderColor: 'success.light', borderRadius: 0.5, flexShrink: 0 }} />
+                  <Typography variant="caption" color="text.secondary" noWrap>Aktivan</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <Box sx={{ width: 14, height: 14, bgcolor: 'action.disabledBackground', border: '1px solid', borderColor: 'divider', borderRadius: 0.5, flexShrink: 0 }} />
+                  <Typography variant="caption" color="text.secondary" noWrap>Nije povezan</Typography>
+                </Box>
+              </>
+            )}
           </>
         )}
       </Box>

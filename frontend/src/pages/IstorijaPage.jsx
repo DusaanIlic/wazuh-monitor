@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box, Typography, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Paper, Button, Modal, Chip, CircularProgress,
 } from '@mui/material';
 import HistoryIcon from '@mui/icons-material/History';
 import ComputerIcon from '@mui/icons-material/Computer';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { getIstorijaKolokvijuma, getAgents } from '../services/api';
 
 function formatDatum(iso) {
@@ -29,6 +31,7 @@ const modalStyle = {
 };
 
 export default function IstorijaPage() {
+  const navigate = useNavigate();
   const [istorija, setIstorija] = useState([]);
   const [agentMap, setAgentMap] = useState({});
   const [loading, setLoading] = useState(true);
@@ -49,6 +52,13 @@ export default function IstorijaPage() {
 
   return (
     <Box sx={{ p: 3, maxWidth: 1100, mx: 'auto' }}>
+      <Button
+        startIcon={<ArrowBackIcon />}
+        onClick={() => navigate('/')}
+        sx={{ mb: 2 }}
+      >
+        Početna
+      </Button>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
         <HistoryIcon sx={{ color: '#1565c0', fontSize: 28 }} />
         <Typography variant="h5" fontWeight="bold">
