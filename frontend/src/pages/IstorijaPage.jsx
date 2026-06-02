@@ -5,7 +5,7 @@ import {
 } from '@mui/material';
 import HistoryIcon from '@mui/icons-material/History';
 import ComputerIcon from '@mui/icons-material/Computer';
-import { getIstorijaKolokvijuma } from '../services/api';
+import { getIstorijaKolokvijuma, getAgents } from '../services/api';
 
 function formatDatum(iso) {
   if (!iso) return '—';
@@ -30,13 +30,19 @@ const modalStyle = {
 
 export default function IstorijaPage() {
   const [istorija, setIstorija] = useState([]);
+  const [agentMap, setAgentMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [greska, setGreska] = useState(null);
   const [modalKolokvijum, setModalKolokvijum] = useState(null);
 
   useEffect(() => {
-    getIstorijaKolokvijuma()
-      .then(setIstorija)
+    Promise.all([getIstorijaKolokvijuma(), getAgents()])
+      .then(([hist, agents]) => {
+        setIstorija(hist);
+        const map = {};
+        (agents ?? []).forEach(a => { map[a.id] = a.name; });
+        setAgentMap(map);
+      })
       .catch(err => setGreska(err.message))
       .finally(() => setLoading(false));
   }, []);
@@ -146,7 +152,7 @@ export default function IstorijaPage() {
                   <Typography variant="body2" color="text.secondary">Nema podataka</Typography>
                 ) : (
                   modalKolokvijum.agents.map(id => (
-                    <Chip key={id} label={`Agent ${id}`} icon={<ComputerIcon />} size="small" />
+                    <Chip key={id} label={agentMap[id] ?? `Agent ${id}`} icon={<ComputerIcon />} size="small" />
                   ))
                 )}
               </Box>
