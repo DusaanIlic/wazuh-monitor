@@ -7,7 +7,11 @@ const ruleGroupMessages = {
   'authentication_failed': { msg: 'Neuspešna prijava na sistem', severity: 'critical' },
   'windows': { msg: 'Windows sistemski event', severity: 'info' },
   'windows_security': { msg: 'Windows bezbednosni event', severity: 'warning' },
+  'rootcheck': { msg: 'Rootcheck upozorenje (Linux)', severity: 'warning' },
+  'usb': { msg: 'USB uređaj priključen', severity: 'warning' },
 };
+
+const linuxPlatforms = ['ubuntu', 'debian', 'linux'];
 
 const ruleIdMessages = {
   60106: { msg: 'Prijava na sistem', severity: 'info' },
@@ -33,11 +37,19 @@ export function isSystemEvent(alert) {
   if (alert.syscheck) return false;
   const user = alert.data?.win?.eventdata?.subjectUserName || '';
   const targetUser = alert.data?.win?.eventdata?.targetUserName || '';
-  return systemUsers.some(u =>
+  if (systemUsers.some(u =>
     user.toUpperCase() === u ||
     targetUser.toUpperCase() === u ||
     user.endsWith('$')
-  );
+  )) {
+    return true;
+  }
+
+  const srcUser = alert.data?.srcuser || '';
+  const ruleLevel = alert.rule?.level;
+  if (srcUser === 'root' && ruleLevel < 5) return true;
+
+  return false;
 }
 
 const copilotPatterns = ['copilot', 'github copilot', 'microsoft copilot'];
@@ -68,8 +80,16 @@ export function translateAlert(alert) {
   const parentImage = alert.data?.win?.eventdata?.parentImage || '';
   const commandLine = alert.data?.win?.eventdata?.commandLine || '';
   const processName = alert.data?.win?.eventdata?.processName || image || '';
+  const parentProcessName = alert.data?.win?.eventdata?.parentProcessName || '';
+  const description = alert.rule?.description || '';
+  const platform = (alert.agent?.os?.platform || '').toLowerCase();
+  const isLinux = linuxPlatforms.includes(platform);
+  const srcUser = alert.data?.srcuser || '';
+  const srcIp = alert.data?.srcip || '';
+  const dstIp = alert.data?.dstip || '';
   const user = alert.data?.win?.eventdata?.subjectUserName ||
-               alert.data?.win?.eventdata?.targetUserName || '';
+               alert.data?.win?.eventdata?.targetUserName ||
+               srcUser || '';
 
   const watchRules = loadWatchRules();
   console.log('[translateAlert] path:', path, '| processName:', processName, '| image:', image, '| parentImage:', parentImage, '| cmdLine:', commandLine);
@@ -78,11 +98,13 @@ export function translateAlert(alert) {
     const lPat = rule.pattern.toLowerCase();
     const pathMatch = path.toLowerCase().includes(lPat);
     const procMatch = processName.toLowerCase().includes(lPat);
+    const parentProcMatch = parentProcessName.toLowerCase().includes(lPat);
     const imageMatch = image.toLowerCase().includes(lPat);
     const parentMatch = parentImage.toLowerCase().includes(lPat);
     const cmdMatch = commandLine.toLowerCase().includes(lPat);
-    console.log(`[translateAlert] rule "${rule.naziv}" pattern="${lPat}" | pathMatch=${pathMatch} procMatch=${procMatch} imageMatch=${imageMatch} parentMatch=${parentMatch} cmdMatch=${cmdMatch}`);
-    if (pathMatch || procMatch || imageMatch || parentMatch || cmdMatch) {
+    const descMatch = description.toLowerCase().includes(lPat);
+    console.log(`[translateAlert] rule "${rule.naziv}" pattern="${lPat}" | pathMatch=${pathMatch} procMatch=${procMatch} parentProcMatch=${parentProcMatch} imageMatch=${imageMatch} parentMatch=${parentMatch} cmdMatch=${cmdMatch} descMatch=${descMatch}`);
+    if (pathMatch || procMatch || parentProcMatch || imageMatch || parentMatch || cmdMatch || descMatch) {
       return { msg: rule.naziv, severity: rule.akcija, user, customRule: true };
     }
   }
@@ -100,6 +122,14 @@ export function translateAlert(alert) {
 
   if (ruleIdMessages[ruleId]) {
     return { ...ruleIdMessages[ruleId], user };
+  }
+
+  if (groups.includes('syscheck') && path.toLowerCase().includes('/tmp/')) {
+    return { msg: 'Aktivnost u privremenom direktorijumu (Linux)', severity: 'critical', user };
+  }
+
+  if (groups.includes('usb')) {
+    return { msg: 'USB uređaj priključen', severity: 'warning', user };
   }
 
   if (path.toLowerCase().includes('\\temp\\') || path.toLowerCase().includes('/tmp/')) {
@@ -121,9 +151,10 @@ export function translateAlert(alert) {
   }
 
   return {
-    msg: alert.rule?.description || 'Sistemski event',
+    msg: alert.rule?.description || (isLinux ? 'Sistemski event (Linux)' : 'Sistemski event'),
     severity: alert.rule?.level >= 10 ? 'critical' : alert.rule?.level >= 5 ? 'warning' : 'info',
     user,
+    ...(isLinux && (srcIp || dstIp) ? { srcIp, dstIp } : {}),
   };
 }
 
