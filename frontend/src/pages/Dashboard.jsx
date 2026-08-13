@@ -4,7 +4,8 @@ import {
   Container, Typography, Box, CircularProgress, Alert,
   Table, TableBody, TableCell, TableContainer, TableHead,
   TableRow, Paper, Chip, IconButton, Tooltip, TextField,
-  InputAdornment, ToggleButton, ToggleButtonGroup, Divider, Button
+  InputAdornment, ToggleButton, ToggleButtonGroup, Divider, Button,
+  FormControlLabel, Switch
 } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import SearchIcon from '@mui/icons-material/Search';
@@ -13,6 +14,9 @@ import TableRowsIcon from '@mui/icons-material/TableRows';
 import SchoolIcon from '@mui/icons-material/School';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import StopIcon from '@mui/icons-material/Stop';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import ErrorIcon from '@mui/icons-material/Error';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { getAgents, getAgentRisk } from '../services/api';
 import { timeAgo } from '../utils/eventTranslator';
 import ClassroomView from '../components/ClassroomView';
@@ -26,7 +30,37 @@ export default function Dashboard({ kolokvijumAktivan, onStartKolokvijum, onStop
   const [statusFilter, setStatusFilter] = useState('all');
   const [agentRisks, setAgentRisks] = useState({});
   const [viewMode, setViewMode] = useState(() => localStorage.getItem('dashboardViewMode') ?? 'lista');
+  const [showDetails, setShowDetails] = useState(false);
   const navigate = useNavigate();
+
+  const riskIcon = (risk) => {
+    if (!risk) {
+      return (
+        <Tooltip title="Učitavanje...">
+          <CircularProgress size={18} thickness={5} />
+        </Tooltip>
+      );
+    }
+    if (risk.risk === 'critical') {
+      return (
+        <Tooltip title={`Potrebna pažnja — ${risk.critical} kritičnih upozorenja`}>
+          <ErrorIcon color="error" />
+        </Tooltip>
+      );
+    }
+    if (risk.risk === 'warning') {
+      return (
+        <Tooltip title={`Blago upozorenje — ${risk.warning} upozorenja`}>
+          <WarningAmberIcon color="warning" />
+        </Tooltip>
+      );
+    }
+    return (
+      <Tooltip title="Računar je uredan">
+        <CheckCircleIcon color="success" />
+      </Tooltip>
+    );
+  };
 
   const fetchAgents = async () => {
     try {
@@ -158,7 +192,11 @@ export default function Dashboard({ kolokvijumAktivan, onStartKolokvijum, onStop
       </Box>
 
 </Box>
-  
+
+      <Alert severity="info" sx={{ mb: 2 }}>
+        Zelena boja = računar uredan, Crvena = potrebna pažnja. Kliknite na računar za detalje.
+      </Alert>
+
       {/* Search, Filter, View toggle i Legenda u jednom redu */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'nowrap', mb: 2 }}>
         <TextField
@@ -204,6 +242,19 @@ export default function Dashboard({ kolokvijumAktivan, onStartKolokvijum, onStop
             </Tooltip>
           </ToggleButton>
         </ToggleButtonGroup>
+        {viewMode === 'lista' && (
+          <FormControlLabel
+            sx={{ flexShrink: 0, ml: 0 }}
+            control={
+              <Switch
+                size="small"
+                checked={showDetails}
+                onChange={e => setShowDetails(e.target.checked)}
+              />
+            }
+            label={<Typography variant="caption" noWrap>Prikaži detalje (OS, IP)</Typography>}
+          />
+        )}
         {(viewMode === 'ucionica' || viewMode === 'lista') && (
           <>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -258,8 +309,8 @@ export default function Dashboard({ kolokvijumAktivan, onStartKolokvijum, onStop
             <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
               <TableCell align="center"><strong>Računar</strong></TableCell>
               <TableCell align="center"><strong>Status</strong></TableCell>
-              <TableCell align="center"><strong>OS</strong></TableCell>
-              <TableCell align="center"><strong>IP adresa</strong></TableCell>
+              {showDetails && <TableCell align="center"><strong>OS</strong></TableCell>}
+              {showDetails && <TableCell align="center"><strong>IP adresa</strong></TableCell>}
               <TableCell align="center"><strong>Poslednji kontakt</strong></TableCell>
               <TableCell align="center"><strong>Procena</strong></TableCell>
               <TableCell align="center"><strong>Detalji</strong></TableCell>
@@ -268,22 +319,18 @@ export default function Dashboard({ kolokvijumAktivan, onStartKolokvijum, onStop
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                <TableCell colSpan={showDetails ? 7 : 5} align="center" sx={{ py: 4 }}>
                   <CircularProgress size={30} />
                 </TableCell>
               </TableRow>
             ) : filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} align="center">Nema rezultata</TableCell>
+                <TableCell colSpan={showDetails ? 7 : 5} align="center">Nema rezultata</TableCell>
               </TableRow>
             ) : (
               filtered.map(agent => {
                 const isActive = isAgentReallyActive(agent);
                 const risk = agentRisks[agent.id];
-                const riskLabel = !risk ? { label: '...', color: 'default' } :
-                risk.risk === 'critical' ? { label: `Rizik (${risk.critical} kritičnih)`, color: 'error' } :
-                risk.risk === 'warning' ? { label: `Pažnja (${risk.warning} upozorenja)`, color: 'warning' } :
-                { label: 'U redu', color: 'success' };
                 return (
                   <TableRow key={agent.id} hover>
                     <TableCell align="center">
@@ -293,15 +340,15 @@ export default function Dashboard({ kolokvijumAktivan, onStartKolokvijum, onStop
                     <TableCell align="center">
                       <Chip label={isActive ? 'Aktivan' : 'Neaktivan'} color={isActive ? 'success' : 'error'} size="small" />
                     </TableCell>
-                    <TableCell align="center">{agent.os?.name || 'N/A'}</TableCell>
-                    <TableCell align="center">{agent.ip}</TableCell>
+                    {showDetails && <TableCell align="center">{agent.os?.name || 'N/A'}</TableCell>}
+                    {showDetails && <TableCell align="center">{agent.ip}</TableCell>}
                     <TableCell align="center">
                       {new Date(agent.lastKeepAlive).getFullYear() === 9999
                         ? 'Server'
                         : timeAgo(agent.lastKeepAlive)}
                     </TableCell>
                     <TableCell align="center">
-                    <Chip label={riskLabel.label} color={riskLabel.color} size="small" variant="outlined" />
+                      {riskIcon(risk)}
                     </TableCell>
                     <TableCell align="center">
                       <Tooltip title="Pogledaj detalje">

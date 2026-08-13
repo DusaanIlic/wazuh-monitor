@@ -35,6 +35,7 @@ export default function AgentDetails() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [hideSystem, setHideSystem] = useState(true);
+  const [showTechnicalDetails, setShowTechnicalDetails] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [screenshots, setScreenshots] = useState([]);
@@ -259,12 +260,19 @@ export default function AgentDetails() {
       )}
 
       {kolokvijum?.isActive && (
-        <FormControlLabel
-          control={<Switch checked={hideSystem} onChange={e => setHideSystem(e.target.checked)} />}
-          label="Sakrij sistemske procese (SYSTEM, NT AUTHORITY...)"
-          onChange={e => { setHideSystem(e.target.checked); setPage(0); }}
-          sx={{ mb: 2 }}
-        />
+        <Box display="flex" flexDirection="row" alignItems="center" flexWrap="wrap">
+          <FormControlLabel
+            control={<Switch checked={hideSystem} onChange={e => setHideSystem(e.target.checked)} />}
+            label="Sakrij sistemske procese (SYSTEM, NT AUTHORITY...)"
+            onChange={e => { setHideSystem(e.target.checked); setPage(0); }}
+            sx={{ mb: 2 }}
+          />
+          <FormControlLabel
+            control={<Switch checked={showTechnicalDetails} onChange={e => setShowTechnicalDetails(e.target.checked)} />}
+            label="Prikaži tehničke detalje (Rule ID)"
+            sx={{ mb: 2 }}
+          />
+        </Box>
       )}
 
       {kolokvijum?.isActive && !loading && filtered.length > 0 && (
@@ -301,9 +309,11 @@ export default function AgentDetails() {
                             <Typography variant="caption" color="text.secondary">
                               🕐 {new Date(alert.timestamp).toLocaleString('sr-RS')}
                             </Typography>
-                            <Typography variant="caption" color="text.secondary" sx={{ ml: 2 }}>
-                              Rule: {alert.rule?.id} — {alert.rule?.description}
-                            </Typography>
+                            {showTechnicalDetails && (
+                              <Typography variant="caption" color="text.secondary" sx={{ ml: 2 }}>
+                                Rule: {alert.rule?.id} — {alert.rule?.description}
+                              </Typography>
+                            )}
                           </Box>
                         }
                       />
