@@ -1,5 +1,7 @@
 import { Box, Typography, Tooltip, Paper } from '@mui/material';
 import ComputerIcon from '@mui/icons-material/Computer';
+import ErrorIcon from '@mui/icons-material/Error';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 
 function AlertIndicators({ critical, warning }) {
   if (critical <= 0 && warning <= 0) return null;
@@ -12,28 +14,26 @@ function AlertIndicators({ critical, warning }) {
       {warning > 0 && (
         <Tooltip title={`${warning} upozorenja`} arrow>
           <Box sx={{
-            width: 26, height: 26, borderRadius: '50%',
+            width: 24, height: 24, borderRadius: '50%',
             bgcolor: 'warning.main', color: '#fff',
             border: '2px solid white',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 13, fontWeight: 'bold', lineHeight: 1,
             boxShadow: 2,
           }}>
-            {warning}
+            <WarningAmberIcon sx={{ fontSize: 15 }} />
           </Box>
         </Tooltip>
       )}
       {critical > 0 && (
         <Tooltip title={`${critical} kritičnih alerta`} arrow>
           <Box sx={{
-            width: 30, height: 30, borderRadius: '50%',
+            width: 24, height: 24, borderRadius: '50%',
             bgcolor: 'error.main', color: '#fff',
             border: '2px solid white',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 14, fontWeight: 'bold', lineHeight: 1,
             boxShadow: 3,
           }}>
-            {critical}
+            <ErrorIcon sx={{ fontSize: 15 }} />
           </Box>
         </Tooltip>
       )}

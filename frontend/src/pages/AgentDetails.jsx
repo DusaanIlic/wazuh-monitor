@@ -59,7 +59,7 @@ export default function AgentDetails() {
           console.log('[AgentDetails] kolokvijum aktivan, fetch od:', status.startTime);
           data = await getAgentAlertsFrom(agentId, status.startTime);
         } else {
-          data = [];
+          data = await getAgentAlerts(agentId, 100, timeRange);
         }
         console.log('Alerte dobijene:', data);
         const translated = data.map(a => ({
@@ -215,19 +215,17 @@ export default function AgentDetails() {
           <Typography variant="body2" color="text.secondary">
             Prikaz detektovanih aktivnosti
           </Typography>
-          {kolokvijum?.isActive && (
-            <Box display="flex" flexDirection="row" gap={1} alignItems="center" mt={1}>
-              {criticalCount > 0 && (
-                <Chip icon={<ErrorIcon />} label={`${criticalCount} kritičnih`} color="error" />
-              )}
-              {warningCount > 0 && (
-                <Chip icon={<WarningAmberIcon />} label={`${warningCount} upozorenja`} color="warning" />
-              )}
-              {criticalCount === 0 && warningCount === 0 && !loading && (
-                <Chip label="Bez nepravilnosti" color="success" />
-              )}
-            </Box>
-          )}
+          <Box display="flex" flexDirection="row" gap={1} alignItems="center" mt={1}>
+            {criticalCount > 0 && (
+              <Chip icon={<ErrorIcon />} label={`${criticalCount} kritičnih`} color="error" />
+            )}
+            {warningCount > 0 && (
+              <Chip icon={<WarningAmberIcon />} label={`${warningCount} upozorenja`} color="warning" />
+            )}
+            {criticalCount === 0 && warningCount === 0 && !loading && (
+              <Chip label="Bez nepravilnosti" color="success" />
+            )}
+          </Box>
         </Box>
 
         {!kolokvijum?.isActive && (
@@ -255,27 +253,25 @@ export default function AgentDetails() {
 
       {kolokvijum !== null && !kolokvijum.isActive && (
         <Alert severity="info" sx={{ mt: 2 }}>
-          Pokrenite kolokvijum da biste počeli sa praćenjem aktivnosti.
+          Kolokvijum nije pokrenut — prikazuju se alerti za izabrani period.
         </Alert>
       )}
 
-      {kolokvijum?.isActive && (
-        <Box display="flex" flexDirection="row" alignItems="center" flexWrap="wrap">
-          <FormControlLabel
-            control={<Switch checked={hideSystem} onChange={e => setHideSystem(e.target.checked)} />}
-            label="Sakrij sistemske procese (SYSTEM, NT AUTHORITY...)"
-            onChange={e => { setHideSystem(e.target.checked); setPage(0); }}
-            sx={{ mb: 2 }}
-          />
-          <FormControlLabel
-            control={<Switch checked={showTechnicalDetails} onChange={e => setShowTechnicalDetails(e.target.checked)} />}
-            label="Prikaži tehničke detalje (Rule ID)"
-            sx={{ mb: 2 }}
-          />
-        </Box>
-      )}
+      <Box display="flex" flexDirection="row" alignItems="center" flexWrap="wrap">
+        <FormControlLabel
+          control={<Switch checked={hideSystem} onChange={e => setHideSystem(e.target.checked)} />}
+          label="Sakrij sistemske procese (SYSTEM, NT AUTHORITY...)"
+          onChange={e => { setHideSystem(e.target.checked); setPage(0); }}
+          sx={{ mb: 2 }}
+        />
+        <FormControlLabel
+          control={<Switch checked={showTechnicalDetails} onChange={e => setShowTechnicalDetails(e.target.checked)} />}
+          label="Prikaži tehničke detalje (Rule ID)"
+          sx={{ mb: 2 }}
+        />
+      </Box>
 
-      {kolokvijum?.isActive && !loading && filtered.length > 0 && (
+      {!loading && filtered.length > 0 && (
         <Paper>
           <List disablePadding>
             {filtered
@@ -340,7 +336,7 @@ export default function AgentDetails() {
         </Paper>
       )}
 
-      {kolokvijum?.isActive && !loading && filtered.length === 0 && !error && (
+      {!loading && filtered.length === 0 && !error && (
         <Alert severity="success">
           Nisu detektovane nikakve nepravilnosti na ovom računaru.
         </Alert>
