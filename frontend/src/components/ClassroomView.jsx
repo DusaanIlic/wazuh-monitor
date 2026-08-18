@@ -1,61 +1,27 @@
-import { useState, useEffect } from 'react';
 import { Box, Typography, Tooltip, Paper } from '@mui/material';
 import ComputerIcon from '@mui/icons-material/Computer';
-import { translateAlert, isSystemEvent } from '../utils/eventTranslator';
-import { getAgentAlertsBadge, getAgentAlertsFrom, getKolokvijumStatus } from '../services/api';
+import ErrorIcon from '@mui/icons-material/Error';
+import WarningIcon from '@mui/icons-material/Warning';
 
-function AlertBadge({ critical, warning }) {
-  if (critical === 0 && warning === 0) return null;
-  const isCritical = critical > 0;
+function AlertIndicators({ critical, warning }) {
+  if (critical <= 0 && warning <= 0) return null;
   return (
     <Box sx={{
       position: 'absolute', top: 4, right: 4,
-      bgcolor: isCritical ? 'error.main' : 'warning.main',
-      borderRadius: '10px',
-      px: 0.8, py: 0.2,
-      display: 'flex', alignItems: 'center',
+      display: 'flex', gap: 0.4,
       zIndex: 1,
     }}>
-      <Typography sx={{ color: 'white', fontWeight: 'bold', fontSize: 11, lineHeight: 1.4 }}>
-        {isCritical ? `🔴 ${critical}` : `⚠️ ${warning}`}
-      </Typography>
+      {warning > 0 && (
+        <WarningIcon sx={{ color: 'warning.main', fontSize: 20, filter: 'drop-shadow(0 0 1px rgba(0,0,0,0.5))' }} />
+      )}
+      {critical > 0 && (
+        <ErrorIcon sx={{ color: 'error.main', fontSize: 20, filter: 'drop-shadow(0 0 1px rgba(0,0,0,0.5))' }} />
+      )}
     </Box>
   );
 }
 
 function AgentSlot({ agent, onAgentClick }) {
-  const [alertCounts, setAlertCounts] = useState({ critical: 0, warning: 0 });
-
-  useEffect(() => {
-    if (!agent || agent.status !== 'active') return;
-
-    const fetchAlerts = async () => {
-      try {
-        const kolokvijum = await getKolokvijumStatus();
-        if (!kolokvijum?.isActive) {
-          setAlertCounts({ critical: 0, warning: 0 });
-          return;
-        }
-        const alerts = await getAgentAlertsFrom(agent.id, kolokvijum.startTime);
-        const filtered = alerts.filter(a => !isSystemEvent(a));
-        let critical = 0, warning = 0;
-        for (const a of filtered) {
-          const { severity } = translateAlert(a);
-          if (severity === 'critical') critical++;
-          else if (severity === 'warning') warning++;
-        }
-        console.log(`[badge] agent=${agent.id} | ukupno=${alerts.length} | posle system filtera=${filtered.length} | critical=${critical} | warning=${warning}`);
-        setAlertCounts({ critical, warning });
-      } catch (err) {
-        console.error(`[ClassroomView] fetch failed agent=${agent.id}`, err);
-      }
-    };
-
-    fetchAlerts();
-    const interval = setInterval(fetchAlerts, 30000);
-    return () => clearInterval(interval);
-  }, [agent?.id, agent?.status]);
-
   if (!agent) {
     return (
       <Paper
@@ -75,7 +41,9 @@ function AgentSlot({ agent, onAgentClick }) {
   }
 
   const isActive = agent.status === 'active';
-  const hasCritical = alertCounts.critical > 0;
+  const criticalAlerts = agent.criticalAlerts ?? 0;
+  const warningAlerts = agent.warningAlerts ?? 0;
+  const hasCritical = criticalAlerts > 0;
 
   return (
     <Tooltip
@@ -83,15 +51,16 @@ function AgentSlot({ agent, onAgentClick }) {
         <Box>
           <Typography variant="body2" fontWeight="bold">{agent.name}</Typography>
           <Typography variant="caption" display="block">{isActive ? 'Aktivan' : 'Neaktivan'}</Typography>
-          {(alertCounts.critical > 0 || alertCounts.warning > 0) && (
+          {(criticalAlerts > 0 || warningAlerts > 0) && (
             <Box sx={{ mt: 0.5 }}>
-              {alertCounts.critical > 0 ? (
+              {criticalAlerts > 0 && (
                 <Typography variant="caption" display="block" color="error.light">
-                  {alertCounts.critical} kritičnih alerta (poslednjih 24h)
+                  {criticalAlerts} kritičnih alerta
                 </Typography>
-              ) : (
+              )}
+              {warningAlerts > 0 && (
                 <Typography variant="caption" display="block" color="warning.light">
-                  {alertCounts.warning} upozorenja (poslednjih 24h)
+                  {warningAlerts} upozorenja
                 </Typography>
               )}
             </Box>
@@ -121,7 +90,7 @@ function AgentSlot({ agent, onAgentClick }) {
           },
         }}
       >
-        <AlertBadge critical={alertCounts.critical} warning={alertCounts.warning} />
+        <AlertIndicators critical={criticalAlerts} warning={warningAlerts} />
         <ComputerIcon
           sx={{
             fontSize: 44,

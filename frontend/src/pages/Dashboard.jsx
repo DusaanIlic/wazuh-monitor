@@ -295,6 +295,7 @@ export default function Dashboard({ kolokvijumAktivan, onStartKolokvijum, onStop
               agents={filtered.map(agent => ({
                 ...agent,
                 criticalAlerts: agentRisks[agent.id]?.critical ?? 0,
+                warningAlerts: agentRisks[agent.id]?.warning ?? 0,
               }))}
               onAgentClick={agent => navigate(`/agent/${agent.id}`)}
             />
