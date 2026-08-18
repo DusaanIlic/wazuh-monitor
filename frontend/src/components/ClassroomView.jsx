@@ -1,21 +1,41 @@
 import { Box, Typography, Tooltip, Paper } from '@mui/material';
 import ComputerIcon from '@mui/icons-material/Computer';
-import ErrorIcon from '@mui/icons-material/Error';
-import WarningIcon from '@mui/icons-material/Warning';
 
 function AlertIndicators({ critical, warning }) {
   if (critical <= 0 && warning <= 0) return null;
   return (
     <Box sx={{
-      position: 'absolute', top: 4, right: 4,
-      display: 'flex', gap: 0.4,
-      zIndex: 1,
+      position: 'absolute', top: -10, right: -10,
+      display: 'flex', gap: 0.5,
+      zIndex: 2,
     }}>
       {warning > 0 && (
-        <WarningIcon sx={{ color: 'warning.main', fontSize: 20, filter: 'drop-shadow(0 0 1px rgba(0,0,0,0.5))' }} />
+        <Tooltip title={`${warning} upozorenja`} arrow>
+          <Box sx={{
+            width: 26, height: 26, borderRadius: '50%',
+            bgcolor: 'warning.main', color: '#fff',
+            border: '2px solid white',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 13, fontWeight: 'bold', lineHeight: 1,
+            boxShadow: 2,
+          }}>
+            {warning}
+          </Box>
+        </Tooltip>
       )}
       {critical > 0 && (
-        <ErrorIcon sx={{ color: 'error.main', fontSize: 20, filter: 'drop-shadow(0 0 1px rgba(0,0,0,0.5))' }} />
+        <Tooltip title={`${critical} kritičnih alerta`} arrow>
+          <Box sx={{
+            width: 30, height: 30, borderRadius: '50%',
+            bgcolor: 'error.main', color: '#fff',
+            border: '2px solid white',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 14, fontWeight: 'bold', lineHeight: 1,
+            boxShadow: 3,
+          }}>
+            {critical}
+          </Box>
+        </Tooltip>
       )}
     </Box>
   );
@@ -44,6 +64,10 @@ function AgentSlot({ agent, onAgentClick }) {
   const criticalAlerts = agent.criticalAlerts ?? 0;
   const warningAlerts = agent.warningAlerts ?? 0;
   const hasCritical = criticalAlerts > 0;
+  const hasWarning = warningAlerts > 0;
+
+  const borderColor = hasCritical ? 'error.main' : hasWarning ? 'warning.main' : isActive ? 'success.main' : 'divider';
+  const backgroundColor = hasCritical ? '#fff5f5' : hasWarning ? '#fffbf0' : isActive ? 'background.paper' : 'action.disabledBackground';
 
   return (
     <Tooltip
@@ -80,10 +104,10 @@ function AgentSlot({ agent, onAgentClick }) {
           gap: 0.5,
           cursor: 'pointer',
           position: 'relative',
-          border: hasCritical ? '2px solid' : '1px solid',
-          borderColor: hasCritical ? 'error.main' : isActive ? 'success.light' : 'divider',
-          backgroundColor: isActive ? 'background.paper' : 'action.disabledBackground',
-          transition: 'box-shadow 0.15s, transform 0.15s',
+          border: (hasCritical || hasWarning) ? '2px solid' : '1px solid',
+          borderColor,
+          backgroundColor,
+          transition: 'box-shadow 0.15s, transform 0.15s, background-color 0.15s',
           '&:hover': {
             boxShadow: 4,
             transform: 'scale(1.04)',
@@ -94,7 +118,7 @@ function AgentSlot({ agent, onAgentClick }) {
         <ComputerIcon
           sx={{
             fontSize: 44,
-            color: isActive ? (hasCritical ? 'error.main' : 'primary.main') : 'text.disabled',
+            color: isActive ? (hasCritical ? 'error.main' : hasWarning ? 'warning.main' : 'primary.main') : 'text.disabled',
           }}
         />
         <Typography
