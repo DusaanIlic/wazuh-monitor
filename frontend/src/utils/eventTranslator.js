@@ -86,6 +86,12 @@ function isExternalIp(ip) {
   );
 }
 
+const appDataSystemPatterns = [
+  'mozilla', 'firefox', 'chrome', 'edge', 'microsoft edge',
+  'shadercache', 'crashreports', 'cache', 'thumbnails',
+  'indexeddb', 'storage', 'datareporting', 'telemetry', 'updates', 'temp',
+];
+
 function isSystemAccount(username) {
   const u = (username || '').toUpperCase();
   return u.endsWith('$') || systemUsers.includes(u);
@@ -161,8 +167,11 @@ export function translateAlert(alert) {
   }
 
   // 3) AppData korisnika (ne sistemske Windows putanje) — samo ako korisnik nije sistemski nalog
+  // i putanja nije poznata automatska browser/OS lokacija (cache, telemetrija, updates...)
   const subjectUser = alert.data?.win?.eventdata?.subjectUserName || '';
-  if (path.toLowerCase().includes('appdata') && !isSystemAccount(subjectUser)) {
+  const lowerPath = path.toLowerCase();
+  const isAppDataSystemNoise = appDataSystemPatterns.some(p => lowerPath.includes(p));
+  if (lowerPath.includes('appdata') && !isSystemAccount(subjectUser) && !isAppDataSystemNoise) {
     return { msg: 'Aktivnost u AppData folderu korisnika', severity: 'critical', user };
   }
 
