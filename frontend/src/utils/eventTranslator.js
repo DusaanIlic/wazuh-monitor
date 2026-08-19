@@ -8,7 +8,7 @@ const ruleGroupMessages = {
   'windows': { msg: 'Windows sistemski event', severity: 'info' },
   'windows_security': { msg: 'Windows bezbednosni event', severity: 'warning' },
   'rootcheck': { msg: 'Rootcheck upozorenje (Linux)', severity: 'warning' },
-  'usb': { msg: 'USB uređaj priključen', severity: 'warning' },
+  'usb': { msg: 'USB uređaj priključen', severity: 'critical' },
 };
 
 const linuxPlatforms = ['ubuntu', 'debian', 'linux'];
@@ -73,6 +73,24 @@ function isCopilotRelated(path, processName) {
   );
 }
 
+function isExternalIp(ip) {
+  if (!ip) return false;
+  return !(
+    ip.startsWith('192.168.') ||
+    ip.startsWith('10.') ||
+    ip.startsWith('172.') ||
+    ip.startsWith('169.254.') ||
+    ip === '0.0.0.0' ||
+    ip === '::' ||
+    ip === '127.0.0.1'
+  );
+}
+
+function isSystemAccount(username) {
+  const u = (username || '').toUpperCase();
+  return u.endsWith('$') || systemUsers.includes(u);
+}
+
 function loadWatchRules() {
   try {
     return JSON.parse(localStorage.getItem('watchRules') || '[]');
@@ -134,23 +152,35 @@ export function translateAlert(alert) {
   }
 
   if (groups.includes('syscheck') && path.toLowerCase().includes('/tmp/')) {
-    return { msg: 'Aktivnost u privremenom direktorijumu (Linux)', severity: 'critical', user };
+    return { msg: 'Aktivnost u privremenom direktorijumu (Linux)', severity: 'warning', user };
   }
 
-  if (groups.includes('usb')) {
-    return { msg: 'USB uređaj priključen', severity: 'warning', user };
+  // 1) USB — putanja ili grupa pravila sadrži 'usb'
+  if (path.toLowerCase().includes('usb') || groups.includes('usb')) {
+    return { msg: 'USB uređaj priključen', severity: 'critical', user };
+  }
+
+  // 3) AppData korisnika (ne sistemske Windows putanje) — samo ako korisnik nije sistemski nalog
+  const subjectUser = alert.data?.win?.eventdata?.subjectUserName || '';
+  if (path.toLowerCase().includes('appdata') && !isSystemAccount(subjectUser)) {
+    return { msg: 'Aktivnost u AppData folderu korisnika', severity: 'critical', user };
   }
 
   if (path.toLowerCase().includes('\\temp\\') || path.toLowerCase().includes('/tmp/')) {
-    return { msg: 'Aktivnost u privremenom folderu (Temp)', severity: 'critical', user };
+    return { msg: 'Aktivnost u privremenom folderu (Temp)', severity: 'warning', user };
   }
 
   if (path.toLowerCase().includes('startup')) {
-    return { msg: 'Promena u Startup folderu', severity: 'critical', user };
+    return { msg: 'Promena u Startup folderu', severity: 'warning', user };
   }
 
   if (path.toLowerCase().includes('system32')) {
-    return { msg: 'Promena u System32 folderu', severity: 'critical', user };
+    return { msg: 'Promena u System32 folderu', severity: 'warning', user };
+  }
+
+  // 4) Mrežna grupa pravila + eksterna IP adresa
+  if (groups.includes('network') && (isExternalIp(srcIp) || isExternalIp(dstIp))) {
+    return { msg: 'Sumnjiva mrežna aktivnost (eksterna IP adresa)', severity: 'critical', user, srcIp, dstIp };
   }
 
   for (const group of groups) {
@@ -161,7 +191,7 @@ export function translateAlert(alert) {
 
   return {
     msg: alert.rule?.description || (isLinux ? 'Sistemski event (Linux)' : 'Sistemski event'),
-    severity: alert.rule?.level >= 10 ? 'critical' : alert.rule?.level >= 5 ? 'warning' : 'info',
+    severity: alert.rule?.level >= 5 ? 'warning' : 'info',
     user,
     ...(isLinux && (srcIp || dstIp) ? { srcIp, dstIp } : {}),
   };
