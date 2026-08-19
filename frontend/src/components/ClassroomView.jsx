@@ -2,6 +2,7 @@ import { Box, Typography, Tooltip, Paper } from '@mui/material';
 import ComputerIcon from '@mui/icons-material/Computer';
 import ErrorIcon from '@mui/icons-material/Error';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import { getOsPlatform } from '../utils/os';
 
 function AlertIndicators({ critical, warning }) {
   if (critical <= 0 && warning <= 0) return null;
@@ -60,7 +61,7 @@ function AgentSlot({ agent, onAgentClick }) {
     );
   }
 
-  const isActive = agent.status === 'active';
+  const isActive = agent.isActive ?? (agent.status === 'active');
   const criticalAlerts = agent.criticalAlerts ?? 0;
   const warningAlerts = agent.warningAlerts ?? 0;
   const hasCritical = criticalAlerts > 0;
@@ -68,6 +69,10 @@ function AgentSlot({ agent, onAgentClick }) {
 
   const borderColor = hasCritical ? 'error.main' : hasWarning ? 'warning.main' : isActive ? 'success.main' : 'divider';
   const backgroundColor = hasCritical ? '#fff5f5' : hasWarning ? '#fffbf0' : isActive ? 'background.paper' : 'action.disabledBackground';
+
+  const osPlatform = getOsPlatform(agent);
+  const osLabel = osPlatform === 'windows' ? 'WIN' : osPlatform === 'linux' ? 'LNX' : null;
+  const iconColor = !isActive ? 'text.disabled' : hasCritical ? 'error.main' : hasWarning ? 'warning.main' : 'success.main';
 
   return (
     <Tooltip
@@ -115,12 +120,20 @@ function AgentSlot({ agent, onAgentClick }) {
         }}
       >
         <AlertIndicators critical={criticalAlerts} warning={warningAlerts} />
-        <ComputerIcon
-          sx={{
-            fontSize: 44,
-            color: isActive ? (hasCritical ? 'error.main' : hasWarning ? 'warning.main' : 'primary.main') : 'text.disabled',
-          }}
-        />
+        <ComputerIcon sx={{ fontSize: 44, color: iconColor }} />
+        {osLabel && (
+          <Typography
+            variant="caption"
+            sx={{
+              fontSize: 10,
+              fontWeight: 'bold',
+              color: 'text.secondary',
+              lineHeight: 1,
+            }}
+          >
+            {osLabel}
+          </Typography>
+        )}
         <Typography
           variant="caption"
           fontWeight="bold"

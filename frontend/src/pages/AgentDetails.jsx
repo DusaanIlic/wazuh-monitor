@@ -251,11 +251,9 @@ export default function AgentDetails() {
                   px: 2.5,
                   py: 1,
                   textTransform: 'none',
-                  fontWeight: 500,
                   border: '1px solid',
                   borderColor: 'divider',
                   '&.Mui-selected': {
-                    fontWeight: 'bold',
                     backgroundColor: 'primary.main',
                     color: 'primary.contrastText',
                     '&:hover': {
