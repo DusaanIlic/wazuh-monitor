@@ -27,12 +27,6 @@ const severityIcon = {
   info: <InfoIcon color="info" />,
 };
 
-const timeRangeLabels = {
-  '1h': 'poslednji sat',
-  '24h': 'poslednjih 24h',
-  '7d': 'poslednjih 7 dana',
-};
-
 export default function AgentDetails() {
   const { agentId } = useParams()
   const [agentName, setAgentName] = useState(agentId);;
@@ -74,7 +68,7 @@ export default function AgentDetails() {
         const status = await getKolokvijumStatus();
         setKolokvijum(status);
 
-        const data = await getAgentAlerts(agentId, 500, timeRange);
+        const data = await getAgentAlerts(agentId, 200, timeRange);
         console.log('Alerte dobijene:', data);
         const translated = data.map(a => ({
           ...a,
@@ -273,11 +267,6 @@ export default function AgentDetails() {
               <ToggleButton value="24h">Poslednjih 24h</ToggleButton>
               <ToggleButton value="7d">Poslednjih 7 dana</ToggleButton>
             </ToggleButtonGroup>
-            {!loading && (
-              <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
-                {`(${alerts.length} alerta za ${timeRangeLabels[timeRange] || timeRange})`}
-              </Typography>
-            )}
           </Box>
         )}
       </Box>

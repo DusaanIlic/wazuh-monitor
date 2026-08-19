@@ -24,7 +24,8 @@ const ruleIdMessages = {
   657: { msg: 'Promena u Windows registru', severity: 'warning' },
 };
 
-const systemUsers = ['SYSTEM', 'LOCAL SERVICE', 'NETWORK SERVICE', 'NT AUTHORITY', ''];
+const systemUsers = ['SYSTEM', 'LOCAL SERVICE', 'NETWORK SERVICE', 'NT AUTHORITY', 'ANONYMOUS LOGON', ''];
+const systemRuleGroups = ['sca', 'ossec'];
 
 export const severityConfig = {
   critical: { color: 'error', label: 'Kritično', priority: 3, bg: '#fff5f5' },
@@ -37,13 +38,21 @@ export function isSystemEvent(alert) {
   if (alert.syscheck) return false;
   const user = alert.data?.win?.eventdata?.subjectUserName || '';
   const targetUser = alert.data?.win?.eventdata?.targetUserName || '';
+
+  if (user.endsWith('$')) return true;
+
   if (systemUsers.some(u =>
     user.toUpperCase() === u ||
-    targetUser.toUpperCase() === u ||
-    user.endsWith('$')
+    targetUser.toUpperCase() === u
   )) {
     return true;
   }
+
+  const groups = alert.rule?.groups || [];
+  if (groups.some(g => systemRuleGroups.includes(g))) return true;
+
+  const logonType = alert.data?.win?.eventdata?.logonType;
+  if (logonType === '5') return true;
 
   const srcUser = alert.data?.srcuser || '';
   const ruleLevel = alert.rule?.level;
