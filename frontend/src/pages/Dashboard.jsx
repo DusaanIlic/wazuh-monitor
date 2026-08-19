@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Container, Typography, Box, CircularProgress, Alert,
   Table, TableBody, TableCell, TableContainer, TableHead,
   TableRow, Paper, Chip, IconButton, Tooltip, TextField,
   InputAdornment, ToggleButton, ToggleButtonGroup, Divider, Button,
-  FormControlLabel, Switch
+  FormControlLabel, Switch, Snackbar
 } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import SearchIcon from '@mui/icons-material/Search';
@@ -69,6 +69,27 @@ export default function Dashboard({ kolokvijumAktivan, onStartKolokvijum, onStop
   const [viewMode, setViewMode] = useState(() => localStorage.getItem('dashboardViewMode') ?? 'lista');
   const [showDetails, setShowDetails] = useState(false);
   const navigate = useNavigate();
+
+  const prevCriticalRef = useRef({});
+  const hasLoadedRisksRef = useRef(false);
+  const [snackPack, setSnackPack] = useState([]);
+  const [snackOpen, setSnackOpen] = useState(false);
+  const [snackMessage, setSnackMessage] = useState(undefined);
+
+  useEffect(() => {
+    if (snackPack.length && !snackMessage) {
+      setSnackMessage({ ...snackPack[0] });
+      setSnackPack(prev => prev.slice(1));
+      setSnackOpen(true);
+    } else if (snackPack.length && snackMessage && snackOpen) {
+      setSnackOpen(false);
+    }
+  }, [snackPack, snackMessage, snackOpen]);
+
+  const handleSnackClose = (event, reason) => {
+    if (reason === 'clickaway') return;
+    setSnackOpen(false);
+  };
 
   const riskIcon = (risk) => {
     if (!risk) {
@@ -155,8 +176,32 @@ export default function Dashboard({ kolokvijumAktivan, onStartKolokvijum, onStop
         }
       }
       setAgentRisks(risks);
+
+      if (hasLoadedRisksRef.current) {
+        const newNotifications = [];
+        for (const agent of agents) {
+          const prevCritical = prevCriticalRef.current[agent.id] ?? 0;
+          const currentCritical = risks[agent.id]?.critical ?? 0;
+          if (currentCritical > prevCritical) {
+            newNotifications.push({
+              key: `${agent.id}-${Date.now()}`,
+              message: `${agent.name}: detektovana sumnjiva aktivnost!`,
+            });
+          }
+        }
+        if (newNotifications.length > 0) {
+          setSnackPack(prev => [...prev, ...newNotifications]);
+        }
+      }
+
+      const criticalByAgent = {};
+      for (const agent of agents) {
+        criticalByAgent[agent.id] = risks[agent.id]?.critical ?? 0;
+      }
+      prevCriticalRef.current = criticalByAgent;
+      hasLoadedRisksRef.current = true;
     };
-    
+
     if (agents.length > 0) fetchRisks();
   }, [agents]);
 
@@ -399,6 +444,19 @@ export default function Dashboard({ kolokvijumAktivan, onStartKolokvijum, onStop
           </TableBody>
         </Table>
       </TableContainer>}
+
+      <Snackbar
+        key={snackMessage?.key}
+        open={snackOpen}
+        autoHideDuration={5000}
+        onClose={handleSnackClose}
+        TransitionProps={{ onExited: () => setSnackMessage(undefined) }}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert onClose={handleSnackClose} severity="error" variant="filled" sx={{ width: '100%' }}>
+          {snackMessage?.message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 }
