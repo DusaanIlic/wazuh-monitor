@@ -3,7 +3,6 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Dashboard from './pages/Dashboard';
 import AgentDetails from './pages/AgentDetails';
-import RulesPage from './pages/RulesPage';
 import IstorijaPage from './pages/IstorijaPage';
 import { startKolokvijum, stopKolokvijum, getKolokvijumStatus } from './services/api';
 
@@ -69,7 +68,6 @@ function App() {
           }
         />
         <Route path="/agent/:agentId" element={<AgentDetails />} />
-        <Route path="/rules" element={<RulesPage />} />
         <Route path="/istorija" element={<IstorijaPage />} />
       </Routes>
     </BrowserRouter>

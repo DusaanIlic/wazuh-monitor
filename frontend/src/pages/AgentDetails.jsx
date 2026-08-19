@@ -11,7 +11,7 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import ErrorIcon from '@mui/icons-material/Error';
 import InfoIcon from '@mui/icons-material/Info';
 import PersonIcon from '@mui/icons-material/Person';
-import { getAgentAlerts, getAgentAlertsFrom, getKolokvijumStatus } from '../services/api';
+import { getAgentAlerts, getKolokvijumStatus } from '../services/api';
 import { translateAlert, severityConfig, isSystemEvent } from '../utils/eventTranslator';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import NetworkCheckIcon from '@mui/icons-material/NetworkCheck';
@@ -35,7 +35,6 @@ export default function AgentDetails() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [hideSystem, setHideSystem] = useState(true);
-  const [showTechnicalDetails, setShowTechnicalDetails] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [screenshots, setScreenshots] = useState([]);
@@ -47,20 +46,29 @@ export default function AgentDetails() {
   const [networkRowsPerPage, setNetworkRowsPerPage] = useState(3);
   const [timeRange, setTimeRange] = useState('24h');
   const [kolokvijum, setKolokvijum] = useState(null);
+  const [kolokvijumAktivan, setKolokvijumAktivan] = useState(
+    () => localStorage.getItem('kolokvijumAktivan') === 'true'
+  );
 
   useEffect(() => {
+    const aktivan = localStorage.getItem('kolokvijumAktivan') === 'true';
+    setKolokvijumAktivan(aktivan);
+
+    if (!aktivan) {
+      setAlerts([]);
+      setKolokvijum(null);
+      setLoading(false);
+      return;
+    }
+
     const fetchAlerts = async () => {
+      setLoading(true);
       try {
         const status = await getKolokvijumStatus();
         setKolokvijum(status);
 
-        let data;
-        if (status?.isActive && status?.startTime) {
-          console.log('[AgentDetails] kolokvijum aktivan, fetch od:', status.startTime);
-          data = await getAgentAlertsFrom(agentId, status.startTime);
-        } else {
-          data = await getAgentAlerts(agentId, 100, timeRange);
-        }
+        console.log('[AgentDetails] kolokvijum aktivan, fetch za period:', timeRange);
+        const data = await getAgentAlerts(agentId, 100, timeRange);
         console.log('Alerte dobijene:', data);
         const translated = data.map(a => ({
           ...a,
@@ -215,20 +223,22 @@ export default function AgentDetails() {
           <Typography variant="body2" color="text.secondary">
             Prikaz detektovanih aktivnosti
           </Typography>
-          <Box display="flex" flexDirection="row" gap={1} alignItems="center" mt={1}>
-            {criticalCount > 0 && (
-              <Chip icon={<ErrorIcon />} label={`${criticalCount} kritičnih`} color="error" />
-            )}
-            {warningCount > 0 && (
-              <Chip icon={<WarningAmberIcon />} label={`${warningCount} upozorenja`} color="warning" />
-            )}
-            {criticalCount === 0 && warningCount === 0 && !loading && (
-              <Chip label="Bez nepravilnosti" color="success" />
-            )}
-          </Box>
+          {kolokvijumAktivan && (
+            <Box display="flex" flexDirection="row" gap={1} alignItems="center" mt={1}>
+              {criticalCount > 0 && (
+                <Chip icon={<ErrorIcon />} label={`${criticalCount} kritičnih`} color="error" />
+              )}
+              {warningCount > 0 && (
+                <Chip icon={<WarningAmberIcon />} label={`${warningCount} upozorenja`} color="warning" />
+              )}
+              {criticalCount === 0 && warningCount === 0 && !loading && (
+                <Chip label="Bez nepravilnosti" color="success" />
+              )}
+            </Box>
+          )}
         </Box>
 
-        {!kolokvijum?.isActive && (
+        {kolokvijumAktivan && (
           <Box display="flex" flexDirection="row" alignItems="center" gap={1}>
             <Typography variant="body2" sx={{ whiteSpace: 'nowrap' }}>Prikaži:</Typography>
             <ToggleButtonGroup
@@ -236,6 +246,24 @@ export default function AgentDetails() {
               exclusive
               onChange={(e, val) => { if (val) setTimeRange(val); }}
               size="small"
+              sx={{
+                '& .MuiToggleButton-root': {
+                  px: 2.5,
+                  py: 1,
+                  textTransform: 'none',
+                  fontWeight: 500,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  '&.Mui-selected': {
+                    fontWeight: 'bold',
+                    backgroundColor: 'primary.main',
+                    color: 'primary.contrastText',
+                    '&:hover': {
+                      backgroundColor: 'primary.dark',
+                    },
+                  },
+                },
+              }}
             >
               <ToggleButton value="1h">Poslednjih sat</ToggleButton>
               <ToggleButton value="24h">Poslednjih 24h</ToggleButton>
@@ -245,18 +273,19 @@ export default function AgentDetails() {
         )}
       </Box>
 
-      {kolokvijum?.isActive && (
+      {kolokvijumAktivan && kolokvijum?.startTime && (
         <Alert severity="success" sx={{ mb: 2 }}>
-          {`Kolokvijum aktivan — prikazuju se alerti od ${new Date(kolokvijum.startTime).toLocaleTimeString('sr-RS')}`}
+          {`Kolokvijum aktivan (pokrenut ${new Date(kolokvijum.startTime).toLocaleTimeString('sr-RS')}) — prikazuju se alerti za izabrani period.`}
         </Alert>
       )}
 
-      {kolokvijum !== null && !kolokvijum.isActive && (
+      {!kolokvijumAktivan && (
         <Alert severity="info" sx={{ mt: 2 }}>
-          Kolokvijum nije pokrenut — prikazuju se alerti za izabrani period.
+          Pokrenite kolokvijum da biste videli aktivnosti na ovom računaru.
         </Alert>
       )}
 
+      {kolokvijumAktivan && (
       <Box display="flex" flexDirection="row" alignItems="center" flexWrap="wrap">
         <FormControlLabel
           control={<Switch checked={hideSystem} onChange={e => setHideSystem(e.target.checked)} />}
@@ -264,14 +293,10 @@ export default function AgentDetails() {
           onChange={e => { setHideSystem(e.target.checked); setPage(0); }}
           sx={{ mb: 2 }}
         />
-        <FormControlLabel
-          control={<Switch checked={showTechnicalDetails} onChange={e => setShowTechnicalDetails(e.target.checked)} />}
-          label="Prikaži tehničke detalje (Rule ID)"
-          sx={{ mb: 2 }}
-        />
       </Box>
+      )}
 
-      {!loading && filtered.length > 0 && (
+      {kolokvijumAktivan && !loading && filtered.length > 0 && (
         <Paper>
           <List disablePadding>
             {filtered
@@ -305,11 +330,6 @@ export default function AgentDetails() {
                             <Typography variant="caption" color="text.secondary">
                               🕐 {new Date(alert.timestamp).toLocaleString('sr-RS')}
                             </Typography>
-                            {showTechnicalDetails && (
-                              <Typography variant="caption" color="text.secondary" sx={{ ml: 2 }}>
-                                Rule: {alert.rule?.id} — {alert.rule?.description}
-                              </Typography>
-                            )}
                           </Box>
                         }
                       />
@@ -336,7 +356,7 @@ export default function AgentDetails() {
         </Paper>
       )}
 
-      {!loading && filtered.length === 0 && !error && (
+      {kolokvijumAktivan && !loading && filtered.length === 0 && !error && (
         <Alert severity="success">
           Nisu detektovane nikakve nepravilnosti na ovom računaru.
         </Alert>

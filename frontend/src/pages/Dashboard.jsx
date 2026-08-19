@@ -17,9 +17,34 @@ import StopIcon from '@mui/icons-material/Stop';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import ComputerIcon from '@mui/icons-material/Computer';
+import StorageIcon from '@mui/icons-material/Storage';
 import { getAgents, getAgentRisk } from '../services/api';
 import { timeAgo } from '../utils/eventTranslator';
 import ClassroomView from '../components/ClassroomView';
+
+const LINUX_PLATFORMS = ['ubuntu', 'debian', 'linux', 'mint', 'linuxmint', 'fedora', 'centos', 'rhel', 'arch', 'manjaro'];
+
+function OsIcon({ agent }) {
+  const platform = agent.os?.platform?.toLowerCase();
+  console.log(`[OsIcon] agent=${agent.name} | os.platform=${agent.os?.platform} | os.name=${agent.os?.name}`);
+  if (platform === 'windows') {
+    return (
+      <Tooltip title={agent.os?.name || 'Windows'}>
+        <ComputerIcon sx={{ fontSize: 18, color: '#0078D4' }} />
+      </Tooltip>
+    );
+  }
+  const isLinux = LINUX_PLATFORMS.includes(platform) || Boolean(agent.os?.name) || Boolean(agent.os?.platform);
+  if (isLinux) {
+    return (
+      <Tooltip title={agent.os?.name || 'Linux'}>
+        <StorageIcon sx={{ fontSize: 18, color: 'success.main' }} />
+      </Tooltip>
+    );
+  }
+  return null;
+}
 
 export default function Dashboard({ kolokvijumAktivan, onStartKolokvijum, onStopKolokvijum }) {
   const [agents, setAgents] = useState([]);
@@ -193,10 +218,6 @@ export default function Dashboard({ kolokvijumAktivan, onStartKolokvijum, onStop
 
 </Box>
 
-      <Alert severity="info" sx={{ mb: 2 }}>
-        Zelena boja = računar uredan, Crvena = potrebna pažnja. Kliknite na računar za detalje.
-      </Alert>
-
       {/* Search, Filter, View toggle i Legenda u jednom redu */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'nowrap', mb: 2 }}>
         <TextField
@@ -265,18 +286,14 @@ export default function Dashboard({ kolokvijumAktivan, onStartKolokvijum, onStop
               <Box sx={{ width: 14, height: 14, bgcolor: 'warning.main', borderRadius: '7px', flexShrink: 0 }} />
               <Typography variant="caption" color="text.secondary" noWrap>Upozorenja (promena fajla, mrežna aktivnost...)</Typography>
             </Box>
-            {viewMode === 'ucionica' && (
-              <>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <Box sx={{ width: 14, height: 14, border: '2px solid', borderColor: 'success.light', borderRadius: 0.5, flexShrink: 0 }} />
-                  <Typography variant="caption" color="text.secondary" noWrap>Aktivan</Typography>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <Box sx={{ width: 14, height: 14, bgcolor: 'action.disabledBackground', border: '1px solid', borderColor: 'divider', borderRadius: 0.5, flexShrink: 0 }} />
-                  <Typography variant="caption" color="text.secondary" noWrap>Nije povezan</Typography>
-                </Box>
-              </>
-            )}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Box sx={{ width: 14, height: 14, bgcolor: 'success.main', borderRadius: 0.5, flexShrink: 0 }} />
+              <Typography variant="caption" color="text.secondary" noWrap>Aktivan</Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Box sx={{ width: 14, height: 14, bgcolor: 'action.disabledBackground', border: '1px solid', borderColor: 'divider', borderRadius: 0.5, flexShrink: 0 }} />
+              <Typography variant="caption" color="text.secondary" noWrap>Nije povezan</Typography>
+            </Box>
           </>
         )}
       </Box>
@@ -285,7 +302,7 @@ export default function Dashboard({ kolokvijumAktivan, onStartKolokvijum, onStop
 
       {/* Prikaz učionice */}
       {viewMode === 'ucionica' && (
-        <Box sx={{ mt: 2 }}>
+        <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
           {loading ? (
             <Box display="flex" justifyContent="center" py={4}>
               <CircularProgress size={30} />
@@ -335,7 +352,10 @@ export default function Dashboard({ kolokvijumAktivan, onStartKolokvijum, onStop
                 return (
                   <TableRow key={agent.id} hover>
                     <TableCell align="center">
-                      <Typography fontWeight="bold">{agent.name}</Typography>
+                      <Box display="flex" alignItems="center" justifyContent="center" gap={0.5}>
+                        <OsIcon agent={agent} />
+                        <Typography fontWeight="bold">{agent.name}</Typography>
+                      </Box>
                       <Typography variant="caption" color="text.secondary">ID: {agent.id}</Typography>
                     </TableCell>
                     <TableCell align="center">
