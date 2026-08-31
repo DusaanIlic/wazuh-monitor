@@ -39,7 +39,6 @@ export default function AgentDetails() {
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [screenshots, setScreenshots] = useState([]);
   const [screenshotDialog, setScreenshotDialog] = useState(false);
-  const [triggeringScreenshot, setTriggeringScreenshot] = useState(false);
   const [ports, setPorts] = useState([]);
   const [showNetwork, setShowNetwork] = useState(false);
   const [networkPage, setNetworkPage] = useState(0);
@@ -121,20 +120,6 @@ export default function AgentDetails() {
       setScreenshots(res.data.data);
     } catch (err) {
       console.error('Greška pri dohvatanju screenshotova');
-    }
-  };
-  
-  const triggerScreenshot = async () => {
-    setTriggeringScreenshot(true);
-    try {
-      await axios.post(`${API_URL}/api/screenshots/trigger/${agentId}`);
-      setTimeout(async () => {
-        await fetchScreenshots();
-        setTriggeringScreenshot(false);
-      }, 8000);
-    } catch (err) {
-      console.error('Greška');
-      setTriggeringScreenshot(false);
     }
   };
 

@@ -14,9 +14,13 @@ export default function ScreenshotDialog({ open, onClose, agentId }) {
   const [triggering, setTriggering] = useState(false);
   const [loading, setLoading] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [triggerError, setTriggerError] = useState(null);
 
   useEffect(() => {
-    if (open) fetchScreenshots();
+    if (open) {
+      setTriggerError(null);
+      fetchScreenshots();
+    }
   }, [open]);
 
   const fetchScreenshots = async () => {
@@ -34,13 +38,13 @@ export default function ScreenshotDialog({ open, onClose, agentId }) {
 
   const triggerScreenshot = async () => {
     setTriggering(true);
+    setTriggerError(null);
     try {
       await axios.post(`${API_URL}/api/screenshots/trigger/${agentId}`);
-      setTimeout(async () => {
-        await fetchScreenshots();
-        setTriggering(false);
-      }, 8000);
-    } catch {
+      await fetchScreenshots();
+    } catch (err) {
+      setTriggerError(err.response?.data?.error || 'Greška pri pravljenju screenshot-a');
+    } finally {
       setTriggering(false);
     }
   };
@@ -64,6 +68,11 @@ export default function ScreenshotDialog({ open, onClose, agentId }) {
         </Box>
       </DialogTitle>
       <DialogContent sx={{ overflow: 'hidden', p: 2 }}>
+        {triggerError && (
+          <Alert severity="warning" sx={{ mb: 2 }} onClose={() => setTriggerError(null)}>
+            {triggerError}
+          </Alert>
+        )}
         {loading && <CircularProgress />}
         {!loading && screenshots.length === 0 && (
           <Alert severity="info">Nema screenshotova za ovaj računar.</Alert>

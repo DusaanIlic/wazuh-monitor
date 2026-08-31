@@ -2,11 +2,32 @@ const express = require('express');
 const router = express.Router();
 const path = require('path');
 const fs = require('fs');
-const pendingScreenshots = new Set();
+const { execFile } = require('child_process');
 
 const screenshotDir = path.join(__dirname, '../../screenshots');
 if (!fs.existsSync(screenshotDir)) {
   fs.mkdirSync(screenshotDir, { recursive: true });
+}
+
+const screenshotScript = path.join(__dirname, '../../../scripts/take-screenshot.ps1');
+
+function takeScreenshot(agentId) {
+  return new Promise((resolve, reject) => {
+    const filename = `${agentId}_${Date.now()}.png`;
+    const outputPath = path.join(screenshotDir, filename);
+
+    execFile(
+      'powershell.exe',
+      ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', screenshotScript, '-OutputPath', outputPath],
+      { timeout: 8000 },
+      (err) => {
+        if (err || !fs.existsSync(outputPath)) {
+          return reject(err || new Error('Screenshot fajl nije kreiran'));
+        }
+        resolve(filename);
+      }
+    );
+  });
 }
 
 router.post('/upload/:agentId', (req, res) => {
@@ -48,93 +69,67 @@ router.get('/view/:filename', (req, res) => {
   res.sendFile(filePath);
 });
 
-router.get('/pending/:agentId', (req, res) => {
+router.post('/trigger/:agentId', async (req, res) => {
+  try {
     const { agentId } = req.params;
-    const pending = pendingScreenshots.has(agentId);
-    if (pending) pendingScreenshots.delete(agentId);
-    res.json({ pending });
-  });
-  
-  router.post('/trigger/:agentId', async (req, res) => {
-    try {
-      const { agentId } = req.params;
-      pendingScreenshots.add(agentId);
-      res.json({ success: true, message: 'Screenshot zahtev kreiran' });
-    } catch (err) {
-      res.status(500).json({ error: err.message });
+    const { apiRequest } = require('../services/wazuhApi');
+
+    const agentsData = await apiRequest('get', '/agents', {}, { agents_list: agentId });
+    const agent = agentsData.data.affected_items?.[0];
+
+    if (!agent) {
+      return res.status(404).json({ error: `Agent ${agentId} nije pronađen` });
     }
-  });
 
-  const processedAlerts = new Set();
-
-  async function checkAndTriggerScreenshots() {
     try {
-      const { searchAlerts } = require('../services/opensearch');
-      const { apiRequest } = require('../services/wazuhApi');
+      const filename = await takeScreenshot(agentId);
+      console.log(`Screenshot napravljen za agenta ${agentId}: ${filename}`);
+      res.json({ success: true, filename, url: `/api/screenshots/view/${filename}` });
+    } catch (err) {
+      console.error(`Screenshot nije uspeo za agenta ${agentId}:`, err.message);
+      res.status(500).json({ error: `Screenshot nije uspeo za agenta ${agentId}: ${err.message}` });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
-      // Dohvati sve agente
-      const agentsData = await apiRequest('get', '/agents', { status: 'active' });
-      const agents = agentsData.data.affected_items.filter(a => a.id !== '000');
+const recentAutoScreenshots = new Set();
+const AUTO_SCREENSHOT_COOLDOWN_MS = 5 * 60 * 1000;
 
-      for (const agent of agents) {
-        // Dohvati kritične alerte poslednjih 2 minuta
-        const alerts = await searchAlerts(agent.id, { limit: 10 });
-        
-        const criticalAlerts = alerts.filter(a => {
-          const alertId = a.id;
-          const isCritical = a.rule?.level >= 10 || 
-            a.rule?.groups?.includes('syscheck') ||
-            a.rule?.id === '18101'; // USB
-          
-          // Preskoci vec procesirane alerte
-          if (processedAlerts.has(alertId)) return false;
-          if (isCritical) processedAlerts.add(alertId);
-          return isCritical;
-        });
+async function checkAndTriggerAutoScreenshots() {
+  try {
+    const { searchAlerts } = require('../services/opensearch');
+    const { apiRequest } = require('../services/wazuhApi');
 
-        if (criticalAlerts.length > 0) {
-          console.log(`Auto screenshot za agenta ${agent.id} — ${criticalAlerts.length} kritičnih alertova`);
-          pendingScreenshots.add(agent.id);
+    const agentsData = await apiRequest('get', '/agents', { status: 'active' });
+    const agents = agentsData.data.affected_items.filter(a => a.id !== '000');
+
+    for (const agent of agents) {
+      if (recentAutoScreenshots.has(agent.id)) continue;
+
+      const alerts = await searchAlerts(agent.id, { timeRange: '5m', limit: 10 });
+
+      const hasCriticalAlert = alerts.some(a =>
+        a.rule?.level >= 10 || a.rule?.groups?.includes('usb')
+      );
+
+      if (hasCriticalAlert) {
+        console.log(`Automatski screenshot okinut za agenta ${agent.id} (${agent.name || ''})`);
+        recentAutoScreenshots.add(agent.id);
+        setTimeout(() => recentAutoScreenshots.delete(agent.id), AUTO_SCREENSHOT_COOLDOWN_MS);
+        try {
+          await takeScreenshot(agent.id);
+        } catch (err) {
+          console.error(`Automatski screenshot nije uspeo za agenta ${agent.id}:`, err.message);
         }
       }
-
-      if (processedAlerts.size > 1000) processedAlerts.clear();
-
-    } catch (err) {
-      console.error('Auto screenshot greška:', err.message);
     }
+  } catch (err) {
+    console.error('Auto screenshot greška:', err.message);
   }
+}
 
-  // Provera na 30 sekundi
-  //setInterval(checkAndTriggerScreenshots, 30000);
-
-  async function checkAndTriggerAutoScreenshots() {
-    try {
-      const { searchAlerts } = require('../services/opensearch');
-      const { apiRequest } = require('../services/wazuhApi');
-
-      const agentsData = await apiRequest('get', '/agents', { status: 'active' });
-      const agents = agentsData.data.affected_items.filter(a => a.id !== '000');
-
-      for (const agent of agents) {
-        if (pendingScreenshots.has(agent.id)) continue;
-
-        const alerts = await searchAlerts(agent.id, { timeRange: '5m', limit: 10 });
-
-        const hasCriticalAlert = alerts.some(a =>
-          a.rule?.level >= 10 || a.rule?.groups?.includes('usb')
-        );
-
-        if (hasCriticalAlert) {
-          console.log(`Automatski screenshot okinut za agenta ${agent.id} (${agent.name || ''})`);
-          pendingScreenshots.add(agent.id);
-        }
-      }
-    } catch (err) {
-      console.error('Auto screenshot greška:', err.message);
-    }
-  }
-
-  setInterval(checkAndTriggerAutoScreenshots, 30000);
+setInterval(checkAndTriggerAutoScreenshots, 30000);
 
 module.exports = router;
