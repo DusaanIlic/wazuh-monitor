@@ -108,4 +108,33 @@ router.get('/pending/:agentId', (req, res) => {
   // Provera na 30 sekundi
   //setInterval(checkAndTriggerScreenshots, 30000);
 
+  async function checkAndTriggerAutoScreenshots() {
+    try {
+      const { searchAlerts } = require('../services/opensearch');
+      const { apiRequest } = require('../services/wazuhApi');
+
+      const agentsData = await apiRequest('get', '/agents', { status: 'active' });
+      const agents = agentsData.data.affected_items.filter(a => a.id !== '000');
+
+      for (const agent of agents) {
+        if (pendingScreenshots.has(agent.id)) continue;
+
+        const alerts = await searchAlerts(agent.id, { timeRange: '5m', limit: 10 });
+
+        const hasCriticalAlert = alerts.some(a =>
+          a.rule?.level >= 10 || a.rule?.groups?.includes('usb')
+        );
+
+        if (hasCriticalAlert) {
+          console.log(`Automatski screenshot okinut za agenta ${agent.id} (${agent.name || ''})`);
+          pendingScreenshots.add(agent.id);
+        }
+      }
+    } catch (err) {
+      console.error('Auto screenshot greška:', err.message);
+    }
+  }
+
+  setInterval(checkAndTriggerAutoScreenshots, 30000);
+
 module.exports = router;
