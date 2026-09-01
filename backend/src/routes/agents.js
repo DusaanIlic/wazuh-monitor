@@ -20,9 +20,19 @@ router.get('/:agentId/risk', async (req, res) => {
     
     // Dohvati alerte poslednjih sat vremena
     const alerts = await searchAlerts(agentId, { limit: 50 });
-    
-    const critical = alerts.filter(a => a.rule?.level >= 10).length;
-    const warning = alerts.filter(a => a.rule?.level >= 5 && a.rule?.level < 10).length;
+
+    const isUsbAlert = (a) =>
+      a.rule?.groups?.includes('usb') ||
+      a.syscheck?.path?.toLowerCase().includes('usb') ||
+      String(a.rule?.id) === '18101';
+
+    const isCopilotAlert = (a) =>
+      a.rule?.description?.toLowerCase().includes('copilot');
+
+    const isForcedCritical = (a) => isUsbAlert(a) || isCopilotAlert(a);
+
+    const critical = alerts.filter(a => a.rule?.level >= 10 || isForcedCritical(a)).length;
+    const warning = alerts.filter(a => !isForcedCritical(a) && a.rule?.level >= 5 && a.rule?.level < 10).length;
     
     let risk = 'low';
     if (critical > 0) risk = 'critical';
