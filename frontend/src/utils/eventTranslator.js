@@ -147,6 +147,7 @@ export function translateAlert(alert) {
     return { msg: 'Pokušaj zaustavljanja Wazuh agenta!', severity: 'critical', user };
   }
 
+  // 2) Copilot / AI asistent
   if (isCopilotRelated(path, processName) ||
       isCopilotRelated(image, parentImage) ||
       copilotPatterns.some(p => commandLine.toLowerCase().includes(p))) {
@@ -166,13 +167,14 @@ export function translateAlert(alert) {
     return { msg: 'USB uređaj priključen', severity: 'critical', user };
   }
 
-  // 3) AppData korisnika (ne sistemske Windows putanje) — samo ako korisnik nije sistemski nalog
-  // i putanja nije poznata automatska browser/OS lokacija (cache, telemetrija, updates...)
+  // AppData korisnika (ne sistemske Windows putanje) — warning, ne critical
+  // — samo ako korisnik nije sistemski nalog i putanja nije poznata automatska
+  // browser/OS lokacija (cache, telemetrija, updates...)
   const subjectUser = alert.data?.win?.eventdata?.subjectUserName || '';
   const lowerPath = path.toLowerCase();
   const isAppDataSystemNoise = appDataSystemPatterns.some(p => lowerPath.includes(p));
   if (lowerPath.includes('appdata') && !isSystemAccount(subjectUser) && !isAppDataSystemNoise) {
-    return { msg: 'Aktivnost u AppData folderu korisnika', severity: 'critical', user };
+    return { msg: 'Aktivnost u AppData folderu korisnika', severity: 'warning', user };
   }
 
   if (path.toLowerCase().includes('\\temp\\') || path.toLowerCase().includes('/tmp/')) {
@@ -187,7 +189,7 @@ export function translateAlert(alert) {
     return { msg: 'Promena u System32 folderu', severity: 'warning', user };
   }
 
-  // 4) Mrežna grupa pravila + eksterna IP adresa
+  // 3) Mrežna grupa pravila + eksterna IP adresa
   if (groups.includes('network') && (isExternalIp(srcIp) || isExternalIp(dstIp))) {
     return { msg: 'Sumnjiva mrežna aktivnost (eksterna IP adresa)', severity: 'critical', user, srcIp, dstIp };
   }

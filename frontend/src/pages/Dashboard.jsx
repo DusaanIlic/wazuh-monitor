@@ -182,7 +182,9 @@ export default function Dashboard({ kolokvijumAktivan, onStartKolokvijum, onStop
         for (const agent of agents) {
           const prevCritical = prevCriticalRef.current[agent.id] ?? 0;
           const currentCritical = risks[agent.id]?.critical ?? 0;
+          console.log(`[toast check] agent=${agent.name} prevCritical=${prevCritical} currentCritical=${currentCritical} kolokvijumAktivan=${kolokvijumAktivan}`);
           if (currentCritical > prevCritical) {
+            console.log(`[toast trigger] agent=${agent.name} criticalAlerts porastao ${prevCritical} -> ${currentCritical}, prikazujem toast (kolokvijumAktivan=${kolokvijumAktivan})`);
             newNotifications.push({
               key: `${agent.id}-${Date.now()}`,
               message: `${agent.name}: detektovana sumnjiva aktivnost!`,
@@ -190,6 +192,7 @@ export default function Dashboard({ kolokvijumAktivan, onStartKolokvijum, onStop
           }
         }
         if (newNotifications.length > 0) {
+          console.log(`[toast trigger] dodajem ${newNotifications.length} notifikacija u snackPack`);
           setSnackPack(prev => [...prev, ...newNotifications]);
         }
       }
