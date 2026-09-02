@@ -112,10 +112,35 @@ export default function AgentDetails() {
     }
   };
 
+  const formatCsvDate = (dateStr) => {
+    const d = new Date(dateStr);
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  };
+
+  const escapeCsvField = (value) => {
+    const str = String(value ?? '');
+    if (/[",\n;]/.test(str)) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  };
+
   const downloadLogs = () => {
     const datum = new Date().toISOString().slice(0, 10);
-    const filename = `logovi_${agentName}_${datum}.json`;
-    const blob = new Blob([JSON.stringify(filtered, null, 2)], { type: 'application/json' });
+    const filename = `logovi_${agentName}_${datum}.csv`;
+    const header = ['Vreme', 'Racunar', 'Tip', 'Opis', 'Korisnik'];
+    const rows = filtered.map(alert => [
+      formatCsvDate(alert.timestamp),
+      agentName,
+      severityConfig[alert.translated.severity]?.label || alert.translated.severity,
+      alert.translated.msg,
+      alert.translated.user || '',
+    ]);
+    const csv = [header, ...rows]
+      .map(row => row.map(escapeCsvField).join(','))
+      .join('\r\n');
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
