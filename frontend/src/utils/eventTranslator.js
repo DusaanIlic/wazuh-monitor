@@ -44,7 +44,7 @@ export function isSystemEvent(alert) {
   const groups = alert.rule?.groups || [];
   if (groups.some(g => systemRuleGroups.includes(g))) return true;
 
-  if (groups.includes('syscheck_file') || groups.includes('syscheck_entry_modified')) return true;
+  if (groups.some(g => g.includes('syscheck'))) return true;
 
   const logonType = alert.data?.win?.eventdata?.logonType;
   if (logonType === '5') return true;
