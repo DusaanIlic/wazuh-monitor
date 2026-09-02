@@ -42,21 +42,31 @@ function AlertIndicators({ critical, warning }) {
   );
 }
 
-function AgentSlot({ agent, onAgentClick }) {
+function AgentSlot({ agent, onAgentClick, isTeacher }) {
   if (!agent) {
     return (
       <Paper
         variant="outlined"
         sx={{
           aspectRatio: '1',
+          minWidth: 150,
+          minHeight: 150,
           display: 'flex',
+          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          opacity: 0.25,
-          borderStyle: 'dashed',
+          gap: 0.5,
+          opacity: isTeacher ? 1 : 0.25,
+          borderStyle: isTeacher ? 'solid' : 'dashed',
+          backgroundColor: isTeacher ? '#E3F2FD' : undefined,
         }}
       >
         <ComputerIcon sx={{ fontSize: 40, color: 'text.disabled' }} />
+        {isTeacher && (
+          <Typography variant="caption" fontWeight="bold" color="text.secondary">
+            Nastavnik
+          </Typography>
+        )}
       </Paper>
     );
   }
@@ -68,7 +78,7 @@ function AgentSlot({ agent, onAgentClick }) {
   const hasWarning = warningAlerts > 0;
 
   const borderColor = hasCritical ? 'error.main' : hasWarning ? 'warning.main' : isActive ? 'success.main' : 'divider';
-  const backgroundColor = hasCritical ? '#fff5f5' : hasWarning ? '#fffbf0' : isActive ? 'background.paper' : 'action.disabledBackground';
+  const backgroundColor = hasCritical ? '#fff5f5' : hasWarning ? '#fffbf0' : isTeacher ? '#E3F2FD' : isActive ? 'background.paper' : 'action.disabledBackground';
 
   const osPlatform = getOsPlatform(agent);
   const osLabel = osPlatform === 'windows' ? 'WIN' : osPlatform === 'linux' ? 'LNX' : null;
@@ -102,6 +112,8 @@ function AgentSlot({ agent, onAgentClick }) {
         onClick={() => onAgentClick?.(agent)}
         sx={{
           aspectRatio: '1',
+          minWidth: 150,
+          minHeight: 150,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -134,37 +146,47 @@ function AgentSlot({ agent, onAgentClick }) {
             {osLabel}
           </Typography>
         )}
-        <Typography
-          variant="caption"
-          fontWeight="bold"
-          noWrap
-          sx={{
-            maxWidth: '90%',
-            color: isActive ? 'text.primary' : 'text.disabled',
-          }}
-        >
-          {agent.name}
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, maxWidth: '90%' }}>
+          <Typography
+            variant="caption"
+            fontWeight="bold"
+            noWrap
+            sx={{
+              color: isActive ? 'text.primary' : 'text.disabled',
+            }}
+          >
+            {agent.name}
+          </Typography>
+          {isTeacher && (
+            <Typography
+              variant="caption"
+              fontWeight="bold"
+              sx={{ color: 'primary.main', flexShrink: 0 }}
+            >
+              (Nastavnik)
+            </Typography>
+          )}
+        </Box>
       </Paper>
     </Tooltip>
   );
 }
 
 export default function ClassroomView({ agents = [], onAgentClick }) {
-  const slots = Array.from({ length: 9 }, (_, i) => agents[i] ?? null);
+  const slots = Array.from({ length: 25 }, (_, i) => agents[i] ?? null);
 
   return (
     <Box
       sx={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
+        gridTemplateColumns: 'repeat(5, 1fr)',
         gap: 2,
         p: 2,
-        maxWidth: 520,
+        maxWidth: 900,
       }}
     >
       {slots.map((agent, i) => (
-        <AgentSlot key={agent?.id ?? `empty-${i}`} agent={agent} onAgentClick={onAgentClick} />
+        <AgentSlot key={agent?.id ?? `empty-${i}`} agent={agent} onAgentClick={onAgentClick} isTeacher={i === 0} />
       ))}
     </Box>
   );

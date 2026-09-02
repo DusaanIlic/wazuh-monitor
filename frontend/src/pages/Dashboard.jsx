@@ -220,7 +220,7 @@ export default function Dashboard({ kolokvijumAktivan, onStartKolokvijum, onStop
   
       {/* Leva strana */}
       <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 1 }}>
-        <Typography variant="h5" fontWeight="bold">Pregled računara</Typography>
+        <Typography variant="h5" fontWeight="bold">Učionica A-2-28</Typography>
         <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
           — osveženo: {lastRefresh.toLocaleTimeString('sr-RS')}
         </Typography>
