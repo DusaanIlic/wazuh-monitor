@@ -31,8 +31,10 @@ router.get('/:agentId/risk', async (req, res) => {
 
     const isForcedCritical = (a) => isUsbAlert(a) || isCopilotAlert(a);
 
-    const critical = alerts.filter(a => a.rule?.level >= 10 || isForcedCritical(a)).length;
-    const warning = alerts.filter(a => !isForcedCritical(a) && a.rule?.level >= 5 && a.rule?.level < 10).length;
+    const isSyscheckAlert = (a) => a.rule?.groups?.some(g => g.includes('syscheck'));
+
+    const critical = alerts.filter(a => isForcedCritical(a) || (!isSyscheckAlert(a) && a.rule?.level >= 10)).length;
+    const warning = alerts.filter(a => !isForcedCritical(a) && !isSyscheckAlert(a) && a.rule?.level >= 5 && a.rule?.level < 10).length;
     
     let risk = 'low';
     if (critical > 0) risk = 'critical';

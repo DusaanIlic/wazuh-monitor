@@ -18,7 +18,8 @@ const ruleIdMessages = {
 };
 
 const systemUsers = ['SYSTEM', 'LOCAL SERVICE', 'NETWORK SERVICE', 'NT AUTHORITY', 'ANONYMOUS LOGON', ''];
-const systemRuleGroups = ['sca', 'ossec'];
+const systemRuleGroups = ['sca', 'ossec', 'rootcheck'];
+const systemRuleIds = ['550', '553', '554', '556', '594', '598'];
 
 export const severityConfig = {
   critical: { color: 'error', label: 'Kritično', priority: 3, bg: '#fff5f5' },
@@ -28,7 +29,6 @@ export const severityConfig = {
 };
 
 export function isSystemEvent(alert) {
-  if (alert.syscheck) return false;
   const user = alert.data?.win?.eventdata?.subjectUserName || '';
   const targetUser = alert.data?.win?.eventdata?.targetUserName || '';
 
@@ -45,6 +45,8 @@ export function isSystemEvent(alert) {
   if (groups.some(g => systemRuleGroups.includes(g))) return true;
 
   if (groups.some(g => g.includes('syscheck'))) return true;
+
+  if (systemRuleIds.includes(String(alert.rule?.id))) return true;
 
   const logonType = alert.data?.win?.eventdata?.logonType;
   if (logonType === '5') return true;
