@@ -173,7 +173,13 @@ function AgentSlot({ agent, onAgentClick, isTeacher }) {
 }
 
 export default function ClassroomView({ agents = [], onAgentClick }) {
-  const slots = Array.from({ length: 25 }, (_, i) => agents[i] ?? null);
+  // Prvi red: pozicija 0 = nastavnički računar, pozicije 1-4 su rezervisane i uvek prazne.
+  // Agenti (osim nastavničkog) se raspoređuju od pozicije 5 nadalje.
+  const slots = Array.from({ length: 25 }, (_, i) => {
+    if (i === 0) return agents[0] ?? null;
+    if (i >= 1 && i <= 4) return null;
+    return agents[i - 4] ?? null;
+  });
 
   return (
     <Box

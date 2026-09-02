@@ -336,37 +336,31 @@ export default function Dashboard({ kolokvijumAktivan, onStartKolokvijum, onStop
             label={<Typography variant="caption" noWrap>Prikaži detalje (OS, IP)</Typography>}
           />
         )}
-      </Box>
 
-      {/* Legenda — u posebnom redu ispod toolbar-a, ikonice sa tekstom na hover */}
-      {(viewMode === 'ucionica' || viewMode === 'lista') && (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5, flexWrap: 'wrap', mb: 2 }}>
-          <Tooltip title="Kritični alertovi (neovlašćen pristup, sumnjiv proces, USB uređaj...)">
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, cursor: 'default' }}>
-              <Box sx={{ width: 14, height: 14, bgcolor: 'error.main', borderRadius: '7px', flexShrink: 0 }} />
-              <Typography variant="caption" color="text.secondary" noWrap>Kritični alertovi</Typography>
-            </Box>
-          </Tooltip>
-          <Tooltip title="Upozorenja (promena fajla, mrežna aktivnost...)">
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, cursor: 'default' }}>
-              <Box sx={{ width: 14, height: 14, bgcolor: 'warning.main', borderRadius: '7px', flexShrink: 0 }} />
-              <Typography variant="caption" color="text.secondary" noWrap>Upozorenja</Typography>
-            </Box>
-          </Tooltip>
-          <Tooltip title="Agent je aktivan">
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, cursor: 'default' }}>
-              <Box sx={{ width: 14, height: 14, bgcolor: 'success.main', borderRadius: 0.5, flexShrink: 0 }} />
-              <Typography variant="caption" color="text.secondary" noWrap>Aktivan</Typography>
-            </Box>
-          </Tooltip>
-          <Tooltip title="Agent nije povezan">
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, cursor: 'default' }}>
-              <Box sx={{ width: 14, height: 14, bgcolor: 'action.disabledBackground', border: '1px solid', borderColor: 'divider', borderRadius: 0.5, flexShrink: 0 }} />
-              <Typography variant="caption" color="text.secondary" noWrap>Nije povezan</Typography>
-            </Box>
-          </Tooltip>
-        </Box>
-      )}
+        {/* Legenda — ikonice sa tekstom na hover */}
+        {(viewMode === 'ucionica' || viewMode === 'lista') && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5, flexWrap: 'wrap', ml: 'auto' }}>
+            <Tooltip title="Kritični alertovi (neovlašćen pristup, sumnjiv proces, USB uređaj...)">
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, cursor: 'default' }}>
+                <Box sx={{ width: 14, height: 14, bgcolor: 'error.main', borderRadius: '7px', flexShrink: 0 }} />
+                <Typography variant="caption" color="text.secondary" noWrap>Kritični alertovi</Typography>
+              </Box>
+            </Tooltip>
+            <Tooltip title="Agent je aktivan">
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, cursor: 'default' }}>
+                <Box sx={{ width: 14, height: 14, bgcolor: 'success.main', borderRadius: 0.5, flexShrink: 0 }} />
+                <Typography variant="caption" color="text.secondary" noWrap>Aktivan</Typography>
+              </Box>
+            </Tooltip>
+            <Tooltip title="Agent nije povezan">
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, cursor: 'default' }}>
+                <Box sx={{ width: 14, height: 14, bgcolor: 'action.disabledBackground', border: '1px solid', borderColor: 'divider', borderRadius: 0.5, flexShrink: 0 }} />
+                <Typography variant="caption" color="text.secondary" noWrap>Nije povezan</Typography>
+              </Box>
+            </Tooltip>
+          </Box>
+        )}
+      </Box>
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
