@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   Container, Typography, Box, Alert,
   Button, Paper, Chip, Divider, List, ListItem,
-  ListItemIcon, ListItemText, FormControlLabel, Switch, TablePagination,
+  ListItemIcon, ListItemText, TablePagination,
   ToggleButton, ToggleButtonGroup
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -34,7 +34,6 @@ export default function AgentDetails() {
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [hideSystem, setHideSystem] = useState(true);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [screenshots, setScreenshots] = useState([]);
@@ -100,17 +99,7 @@ export default function AgentDetails() {
     fetchAgentName();
   }, [agentId]);
 
-  const filtered = hideSystem
-    ? alerts.filter(a => {
-        const keep = !a.isSystem;
-        const user = a.data?.win?.eventdata?.subjectUserName || a.data?.win?.eventdata?.targetUserName || '(bez korisnika)';
-        console.log(
-          `[filter] ruleId=${a.rule?.id} | syscheck=${!!a.syscheck} | isSystem=${a.isSystem} | user="${user}" | ${keep ? 'PRIKAZANO' : 'FILTRIRANO'}`
-        );
-        return keep;
-      })
-    : alerts;
-  console.log(`[filter] ukupno=${alerts.length} | prikazano=${filtered.length} | hideSystem=${hideSystem}`);
+  const filtered = alerts.filter(a => !a.isSystem);
   const criticalCount = filtered.filter(e => e.translated.severity === 'critical').length;
   const warningCount = filtered.filter(e => e.translated.severity === 'warning').length;
 
@@ -266,17 +255,6 @@ export default function AgentDetails() {
         <Alert severity="info" sx={{ mt: 2 }}>
           Pokrenite kolokvijum da biste videli aktivnosti na ovom računaru.
         </Alert>
-      )}
-
-      {kolokvijumAktivan && (
-      <Box display="flex" flexDirection="row" alignItems="center" flexWrap="wrap">
-        <FormControlLabel
-          control={<Switch checked={hideSystem} onChange={e => setHideSystem(e.target.checked)} />}
-          label="Sakrij sistemske procese (SYSTEM, NT AUTHORITY...)"
-          onChange={e => { setHideSystem(e.target.checked); setPage(0); }}
-          sx={{ mb: 2 }}
-        />
-      </Box>
       )}
 
       {kolokvijumAktivan && !loading && filtered.length > 0 && (
