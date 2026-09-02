@@ -187,4 +187,34 @@ async function searchAgentAlerts(agentId, timeRange = '24h', from = null) {
   return response.data.hits.hits.map(h => h._source);
 }
 
-module.exports = { searchAlerts, searchTempActivity, searchCopilotAlerts, searchAgentAlerts };
+async function searchAlertsForPeriod(startTime, endTime, agentId, limit = 5000) {
+  const must = [
+    { range: { timestamp: { gte: startTime, lte: endTime } } },
+  ];
+
+  if (agentId) {
+    must.push({ term: { 'agent.id': agentId } });
+  }
+
+  const query = {
+    size: limit,
+    sort: [{ timestamp: { order: 'asc' } }],
+    query: { bool: { must } },
+  };
+
+  const response = await axios.post(
+    `${process.env.OPENSEARCH_URL}/wazuh-alerts-4.x-*/_search`,
+    query,
+    {
+      auth: {
+        username: process.env.OPENSEARCH_USER,
+        password: process.env.OPENSEARCH_PASSWORD,
+      },
+      httpsAgent: agent,
+    }
+  );
+
+  return response.data.hits.hits.map(h => h._source);
+}
+
+module.exports = { searchAlerts, searchTempActivity, searchCopilotAlerts, searchAgentAlerts, searchAlertsForPeriod };

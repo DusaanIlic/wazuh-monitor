@@ -46,6 +46,11 @@ export const stopKolokvijum = async () => {
 };
 
 export const getIstorijaKolokvijuma = async () => {
-  const res = await api.get('/kolokvijum/istorija');
+  const res = await api.get('/kolokvijum/historija');
   return res.data.data;
+};
+
+export const getKolokvijumLogoviUrl = (id, agentId) => {
+  const query = agentId ? `?agentId=${encodeURIComponent(agentId)}` : '';
+  return `${API_URL}/api/kolokvijum/historija/${id}/logovi${query}`;
 };

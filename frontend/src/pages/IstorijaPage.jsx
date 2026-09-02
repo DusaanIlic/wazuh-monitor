@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box, Typography, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Paper, Button, Modal, Chip, CircularProgress,
+  TableHead, TableRow, Paper, Button, Modal, Chip, CircularProgress, IconButton,
 } from '@mui/material';
 import HistoryIcon from '@mui/icons-material/History';
 import ComputerIcon from '@mui/icons-material/Computer';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import { getIstorijaKolokvijuma, getAgents } from '../services/api';
+import DownloadIcon from '@mui/icons-material/Download';
+import { getIstorijaKolokvijuma, getKolokvijumLogoviUrl } from '../services/api';
 
 function formatDatum(iso) {
   if (!iso) return '—';
@@ -18,12 +19,19 @@ function formatDatum(iso) {
   }).replace(',', '.');
 }
 
+function racunariLabel(n) {
+  if (n === 1) return 'računar';
+  return 'računara';
+}
+
 const modalStyle = {
   position: 'absolute',
   top: '50%',
   left: '50%',
   transform: 'translate(-50%, -50%)',
   width: 480,
+  maxHeight: '80vh',
+  overflowY: 'auto',
   bgcolor: 'background.paper',
   borderRadius: 2,
   boxShadow: 24,
@@ -33,22 +41,20 @@ const modalStyle = {
 export default function IstorijaPage() {
   const navigate = useNavigate();
   const [istorija, setIstorija] = useState([]);
-  const [agentMap, setAgentMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [greska, setGreska] = useState(null);
   const [modalKolokvijum, setModalKolokvijum] = useState(null);
 
   useEffect(() => {
-    Promise.all([getIstorijaKolokvijuma(), getAgents()])
-      .then(([hist, agents]) => {
-        setIstorija(hist);
-        const map = {};
-        (agents ?? []).forEach(a => { map[a.id] = a.name; });
-        setAgentMap(map);
-      })
+    getIstorijaKolokvijuma()
+      .then(setIstorija)
       .catch(err => setGreska(err.message))
       .finally(() => setLoading(false));
   }, []);
+
+  const preuzmiLogove = (id, agentId) => {
+    window.open(getKolokvijumLogoviUrl(id, agentId), '_blank');
+  };
 
   return (
     <Box sx={{ p: 3, maxWidth: 1100, mx: 'auto' }}>
@@ -89,7 +95,7 @@ export default function IstorijaPage() {
           <Table>
             <TableHead>
               <TableRow sx={{ backgroundColor: '#1565c0' }}>
-                {['Početak', 'Završetak', 'Trajanje', 'Broj računara', ''].map(h => (
+                {['Datum', 'Trajanje', 'Broj računara', ''].map(h => (
                   <TableCell key={h} sx={{ color: '#fff', fontWeight: 'bold' }}>{h}</TableCell>
                 ))}
               </TableRow>
@@ -98,7 +104,6 @@ export default function IstorijaPage() {
               {istorija.map((k, i) => (
                 <TableRow key={k.id || i} hover>
                   <TableCell>{formatDatum(k.startTime)}</TableCell>
-                  <TableCell>{formatDatum(k.endTime)}</TableCell>
                   <TableCell>
                     <Chip
                       label={`${k.trajanje ?? 0} min`}
@@ -120,7 +125,7 @@ export default function IstorijaPage() {
                       size="small"
                       onClick={() => setModalKolokvijum(k)}
                     >
-                      Pregledaj
+                      Detalji
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -148,26 +153,50 @@ export default function IstorijaPage() {
                 <Typography variant="body2">
                   <strong>Trajanje:</strong> {modalKolokvijum.trajanje ?? 0} min
                 </Typography>
-                <Typography variant="body2">
-                  <strong>Vremenski opseg:</strong>{' '}
-                  {formatDatum(modalKolokvijum.startTime)} – {formatDatum(modalKolokvijum.endTime)}
-                </Typography>
               </Box>
 
+              <Button
+                variant="contained"
+                fullWidth
+                startIcon={<DownloadIcon />}
+                onClick={() => preuzmiLogove(modalKolokvijum.id)}
+                sx={{ mb: 2 }}
+              >
+                Preuzmi logove (svi računari)
+              </Button>
+
               <Typography variant="subtitle2" fontWeight="bold" mb={1}>
-                Aktivni računari ({modalKolokvijum.agents?.length ?? 0}):
+                Računari koji su učestvovali ({modalKolokvijum.agents?.length ?? 0}):
               </Typography>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 3 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mb: 3 }}>
                 {(modalKolokvijum.agents ?? []).length === 0 ? (
                   <Typography variant="body2" color="text.secondary">Nema podataka</Typography>
                 ) : (
-                  modalKolokvijum.agents.map(id => (
-                    <Chip key={id} label={agentMap[id] ?? `Agent ${id}`} icon={<ComputerIcon />} size="small" />
+                  modalKolokvijum.agents.map(a => (
+                    <Box
+                      key={a.id}
+                      sx={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        border: '1px solid', borderColor: 'divider', borderRadius: 1, px: 1.5, py: 0.5,
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <ComputerIcon sx={{ fontSize: 18, color: '#555' }} />
+                        <Typography variant="body2">{a.name ?? `Agent ${a.id}`}</Typography>
+                      </Box>
+                      <IconButton
+                        size="small"
+                        title="Preuzmi logove za ovaj računar"
+                        onClick={() => preuzmiLogove(modalKolokvijum.id, a.id)}
+                      >
+                        <DownloadIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
                   ))
                 )}
               </Box>
 
-              <Button variant="contained" fullWidth onClick={() => setModalKolokvijum(null)}>
+              <Button variant="outlined" fullWidth onClick={() => setModalKolokvijum(null)}>
                 Zatvori
               </Button>
             </>
@@ -176,10 +205,4 @@ export default function IstorijaPage() {
       </Modal>
     </Box>
   );
-}
-
-function racunariLabel(n) {
-  if (n === 1) return 'računar';
-  if (n >= 2 && n <= 4) return 'računara';
-  return 'računara';
 }
