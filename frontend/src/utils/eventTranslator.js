@@ -1,8 +1,4 @@
 const ruleGroupMessages = {
-  'syscheck': { msg: 'Promena fajla na sistemu', severity: 'warning' },
-  'syscheck_entry_added': { msg: 'Novi fajl dodat na sistem', severity: 'warning' },
-  'syscheck_entry_deleted': { msg: 'Fajl obrisan sa sistema', severity: 'warning' },
-  'syscheck_entry_modified': { msg: 'Fajl izmenjen', severity: 'warning' },
   'authentication_success': { msg: 'Uspešna prijava na sistem', severity: 'info' },
   'authentication_failed': { msg: 'Neuspešna prijava na sistem', severity: 'critical' },
   'windows': { msg: 'Windows sistemski event', severity: 'info' },
@@ -16,9 +12,6 @@ const linuxPlatforms = ['ubuntu', 'debian', 'linux'];
 const ruleIdMessages = {
   60106: { msg: 'Prijava na sistem', severity: 'info' },
   60107: { msg: 'Neuspešna prijava — pogrešna lozinka', severity: 'critical' },
-  554: { msg: 'Novi fajl dodat na sistem', severity: 'warning' },
-  553: { msg: 'Fajl obrisan', severity: 'warning' },
-  550: { msg: 'Integritet fajla narušen', severity: 'critical' },
   18101: { msg: 'USB uređaj ubačen', severity: 'critical' },
   18102: { msg: 'USB uređaj uklonjen', severity: 'info' },
   657: { msg: 'Promena u Windows registru', severity: 'warning' },
@@ -50,6 +43,8 @@ export function isSystemEvent(alert) {
 
   const groups = alert.rule?.groups || [];
   if (groups.some(g => systemRuleGroups.includes(g))) return true;
+
+  if (groups.includes('syscheck_file') || groups.includes('syscheck_entry_modified')) return true;
 
   const logonType = alert.data?.win?.eventdata?.logonType;
   if (logonType === '5') return true;
@@ -84,17 +79,6 @@ function isExternalIp(ip) {
     ip === '::' ||
     ip === '127.0.0.1'
   );
-}
-
-const appDataSystemPatterns = [
-  'mozilla', 'firefox', 'chrome', 'edge', 'microsoft edge',
-  'shadercache', 'crashreports', 'cache', 'thumbnails',
-  'indexeddb', 'storage', 'datareporting', 'telemetry', 'updates', 'temp',
-];
-
-function isSystemAccount(username) {
-  const u = (username || '').toUpperCase();
-  return u.endsWith('$') || systemUsers.includes(u);
 }
 
 function loadWatchRules() {
@@ -142,8 +126,8 @@ export function translateAlert(alert) {
     }
   }
 
-  if (commandLine.toLowerCase().includes('net stop wazuh') ||
-      commandLine.toLowerCase().includes('net stop')) {
+  // 4) Pokušaj gašenja Wazuh agenta
+  if (ruleId === 100012) {
     return { msg: 'Pokušaj zaustavljanja Wazuh agenta!', severity: 'critical', user };
   }
 
@@ -158,27 +142,9 @@ export function translateAlert(alert) {
     return { ...ruleIdMessages[ruleId], user };
   }
 
-  if (groups.includes('syscheck') && path.toLowerCase().includes('/tmp/')) {
-    return { msg: 'Aktivnost u privremenom direktorijumu (Linux)', severity: 'warning', user };
-  }
-
   // 1) USB — putanja ili grupa pravila sadrži 'usb'
   if (path.toLowerCase().includes('usb') || groups.includes('usb')) {
     return { msg: 'USB uređaj priključen', severity: 'critical', user };
-  }
-
-  // AppData korisnika (ne sistemske Windows putanje) — warning, ne critical
-  // — samo ako korisnik nije sistemski nalog i putanja nije poznata automatska
-  // browser/OS lokacija (cache, telemetrija, updates...)
-  const subjectUser = alert.data?.win?.eventdata?.subjectUserName || '';
-  const lowerPath = path.toLowerCase();
-  const isAppDataSystemNoise = appDataSystemPatterns.some(p => lowerPath.includes(p));
-  if (lowerPath.includes('appdata') && !isSystemAccount(subjectUser) && !isAppDataSystemNoise) {
-    return { msg: 'Aktivnost u AppData folderu korisnika', severity: 'warning', user };
-  }
-
-  if (path.toLowerCase().includes('\\temp\\') || path.toLowerCase().includes('/tmp/')) {
-    return { msg: 'Aktivnost u privremenom folderu (Temp)', severity: 'warning', user };
   }
 
   if (path.toLowerCase().includes('startup')) {
@@ -198,6 +164,15 @@ export function translateAlert(alert) {
     if (ruleGroupMessages[group]) {
       return { ...ruleGroupMessages[group], user };
     }
+  }
+
+  // Sve ostale syscheck izmene — samo info, ne critical/warning
+  if (groups.some(g => g.includes('syscheck'))) {
+    return {
+      msg: alert.rule?.description || 'Promena na sistemu (syscheck)',
+      severity: 'info',
+      user,
+    };
   }
 
   return {
