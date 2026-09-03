@@ -29,6 +29,15 @@ export const severityConfig = {
 };
 
 export function isSystemEvent(alert) {
+  const groupsCheck = alert.rule?.groups || [];
+  if (groupsCheck.includes('usb')) {
+    console.log('[isSystemEvent] USB alert detektovan, rule.groups:', groupsCheck, '| alert:', alert);
+  }
+
+  if (groupsCheck.includes('usb') || groupsCheck.includes('kolokvijum_prekrsaj')) {
+    return false;
+  }
+
   const user = alert.data?.win?.eventdata?.subjectUserName || '';
   const targetUser = alert.data?.win?.eventdata?.targetUserName || '';
 
