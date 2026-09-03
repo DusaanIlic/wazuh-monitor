@@ -14,6 +14,7 @@ import TableRowsIcon from '@mui/icons-material/TableRows';
 import SchoolIcon from '@mui/icons-material/School';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import StopIcon from '@mui/icons-material/Stop';
+import HistoryIcon from '@mui/icons-material/History';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
@@ -216,8 +217,8 @@ export default function Dashboard({ kolokvijumAktivan, onStartKolokvijum, onStop
 
   return (
     <Container maxWidth="xl" sx={{ mt: 3, mb: 4 }}>
-      <Box sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', mb: 2, width: '100%' }}>
-  
+      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', mb: 2, width: '100%' }}>
+
       {/* Leva strana */}
       <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 1 }}>
         <Typography variant="h5" fontWeight="bold">Učionica A-2-28</Typography>
@@ -232,7 +233,7 @@ export default function Dashboard({ kolokvijumAktivan, onStartKolokvijum, onStop
       </Box>
 
       {/* Sredina — kolokvijum dugme */}
-      <Box>
+      <Box sx={{ justifySelf: 'center' }}>
         {kolokvijumAktivan ? (
           <Button
             variant="contained"
@@ -258,22 +259,23 @@ export default function Dashboard({ kolokvijumAktivan, onStartKolokvijum, onStop
         )}
       </Box>
 
-      {/* Desna strana — statistike */}
-      <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-        <Box sx={{ textAlign: 'center' }}>
-          <Typography variant="h6" fontWeight="bold" color="primary" sx={{ lineHeight: 1 }}>{agents.length}</Typography>
-          <Typography variant="caption" color="text.secondary">Ukupno</Typography>
-        </Box>
-        <Divider orientation="vertical" flexItem sx={{ height: 32, alignSelf: 'center' }} />
-        <Box sx={{ textAlign: 'center' }}>
-          <Typography variant="h6" fontWeight="bold" color="success.main" sx={{ lineHeight: 1 }}>{activeCount}</Typography>
-          <Typography variant="caption" color="text.secondary">Aktivnih</Typography>
-        </Box>
-        <Divider orientation="vertical" flexItem sx={{ height: 32, alignSelf: 'center' }} />
-        <Box sx={{ textAlign: 'center' }}>
-          <Typography variant="h6" fontWeight="bold" color="error.main" sx={{ lineHeight: 1 }}>{agents.length - activeCount}</Typography>
-          <Typography variant="caption" color="text.secondary">Neaktivnih</Typography>
-        </Box>
+      {/* Desna strana — istorija kolokvijuma */}
+      <Box sx={{ ml: 'auto' }}>
+        <Button
+          variant="contained"
+          size="small"
+          startIcon={<HistoryIcon />}
+          onClick={() => navigate('/istorija')}
+          sx={{
+            backgroundColor: '#2196f3',
+            fontWeight: 'bold',
+            textTransform: 'none',
+            boxShadow: 2,
+            '&:hover': { backgroundColor: '#1976d2' },
+          }}
+        >
+          Istorija kolokvijuma
+        </Button>
       </Box>
 
 </Box>
@@ -323,6 +325,24 @@ export default function Dashboard({ kolokvijumAktivan, onStartKolokvijum, onStop
             </Tooltip>
           </ToggleButton>
         </ToggleButtonGroup>
+
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0, mx: 'auto' }}>
+          <Box sx={{ textAlign: 'center' }}>
+            <Typography variant="h6" fontWeight="bold" color="primary" sx={{ lineHeight: 1 }}>{agents.length}</Typography>
+            <Typography variant="caption" color="text.secondary">Ukupno</Typography>
+          </Box>
+          <Divider orientation="vertical" flexItem sx={{ height: 32, alignSelf: 'center' }} />
+          <Box sx={{ textAlign: 'center' }}>
+            <Typography variant="h6" fontWeight="bold" color="success.main" sx={{ lineHeight: 1 }}>{activeCount}</Typography>
+            <Typography variant="caption" color="text.secondary">Aktivnih</Typography>
+          </Box>
+          <Divider orientation="vertical" flexItem sx={{ height: 32, alignSelf: 'center' }} />
+          <Box sx={{ textAlign: 'center' }}>
+            <Typography variant="h6" fontWeight="bold" color="error.main" sx={{ lineHeight: 1 }}>{agents.length - activeCount}</Typography>
+            <Typography variant="caption" color="text.secondary">Neaktivnih</Typography>
+          </Box>
+        </Box>
+
         {viewMode === 'lista' && (
           <FormControlLabel
             sx={{ flexShrink: 0, ml: 0 }}
