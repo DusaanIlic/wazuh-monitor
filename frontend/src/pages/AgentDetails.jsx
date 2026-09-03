@@ -69,7 +69,19 @@ export default function AgentDetails() {
         const status = await getKolokvijumStatus();
         setKolokvijum(status);
 
-        const data = await getAgentAlerts(agentId, 200, timeRange);
+        // Kada je kolokvijum aktivan, koristi njegov startTime kao donju granicu
+        // (prosleđuje se kao timeRange parametar u obliku "<sekunde>s", jer /events/:agentId/alerts
+        // podržava samo relativni ES date-math opseg, ne apsolutni "from" datum).
+        let effectiveTimeRange = timeRange;
+        if (status?.isActive && status?.startTime) {
+          const elapsedSeconds = Math.max(
+            1,
+            Math.ceil((Date.now() - new Date(status.startTime).getTime()) / 1000)
+          );
+          effectiveTimeRange = `${elapsedSeconds}s`;
+        }
+
+        const data = await getAgentAlerts(agentId, 200, effectiveTimeRange);
         console.log('Alerte dobijene:', data);
         const translated = data.map(a => ({
           ...a,
@@ -133,9 +145,14 @@ export default function AgentDetails() {
     try {
       const seconds = Math.max(1, Math.ceil((Date.now() - new Date(kolokvijum.startTime).getTime()) / 1000));
       const data = await getAgentAlerts(agentId, 1000, `${seconds}s`);
+      const isNoiseAlert = (a) => {
+        const msg = a.translated?.msg || '';
+        return msg.includes('Summary event') || msg.includes('report signatures') || msg.includes('Kaspersky');
+      };
+
       const rowsData = data
         .map(a => ({ ...a, translated: translateAlert(a), isSystem: isSystemEvent(a) }))
-        .filter(a => !a.isSystem && !a.rule?.groups?.includes('syscheck'));
+        .filter(a => !a.isSystem && !a.rule?.groups?.includes('syscheck') && !isNoiseAlert(a));
 
       const datum = new Date().toISOString().slice(0, 10);
       const filename = `logovi_${agentName}_${datum}.csv`;

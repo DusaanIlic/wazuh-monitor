@@ -165,49 +165,53 @@ export default function Dashboard({ kolokvijumAktivan, onStartKolokvijum, onStop
   });
 
   
+  const fetchRisks = async () => {
+    const risks = {};
+    for (const agent of agents) {
+      try {
+        const risk = await getAgentRisk(agent.id);
+        risks[agent.id] = risk;
+      } catch {
+        risks[agent.id] = { risk: 'low', critical: 0, warning: 0 };
+      }
+    }
+    setAgentRisks(risks);
+
+    if (hasLoadedRisksRef.current) {
+      const newNotifications = [];
+      for (const agent of agents) {
+        const prevCritical = prevCriticalRef.current[agent.id] ?? 0;
+        const currentCritical = risks[agent.id]?.critical ?? 0;
+        console.log(`[toast check] agent=${agent.name} prevCritical=${prevCritical} currentCritical=${currentCritical} kolokvijumAktivan=${kolokvijumAktivan}`);
+        if (currentCritical > prevCritical) {
+          console.log(`[toast trigger] agent=${agent.name} criticalAlerts porastao ${prevCritical} -> ${currentCritical}, prikazujem toast (kolokvijumAktivan=${kolokvijumAktivan})`);
+          newNotifications.push({
+            key: `${agent.id}-${Date.now()}`,
+            message: `${agent.name}: detektovana sumnjiva aktivnost!`,
+          });
+        }
+      }
+      if (newNotifications.length > 0) {
+        console.log(`[toast trigger] dodajem ${newNotifications.length} notifikacija u snackPack`);
+        setSnackPack(prev => [...prev, ...newNotifications]);
+      }
+    }
+
+    const criticalByAgent = {};
+    for (const agent of agents) {
+      criticalByAgent[agent.id] = risks[agent.id]?.critical ?? 0;
+    }
+    prevCriticalRef.current = criticalByAgent;
+    hasLoadedRisksRef.current = true;
+  };
+
   useEffect(() => {
-    const fetchRisks = async () => {
-      const risks = {};
-      for (const agent of agents) {
-        try {
-          const risk = await getAgentRisk(agent.id);
-          risks[agent.id] = risk;
-        } catch {
-          risks[agent.id] = { risk: 'low', critical: 0, warning: 0 };
-        }
-      }
-      setAgentRisks(risks);
-
-      if (hasLoadedRisksRef.current) {
-        const newNotifications = [];
-        for (const agent of agents) {
-          const prevCritical = prevCriticalRef.current[agent.id] ?? 0;
-          const currentCritical = risks[agent.id]?.critical ?? 0;
-          console.log(`[toast check] agent=${agent.name} prevCritical=${prevCritical} currentCritical=${currentCritical} kolokvijumAktivan=${kolokvijumAktivan}`);
-          if (currentCritical > prevCritical) {
-            console.log(`[toast trigger] agent=${agent.name} criticalAlerts porastao ${prevCritical} -> ${currentCritical}, prikazujem toast (kolokvijumAktivan=${kolokvijumAktivan})`);
-            newNotifications.push({
-              key: `${agent.id}-${Date.now()}`,
-              message: `${agent.name}: detektovana sumnjiva aktivnost!`,
-            });
-          }
-        }
-        if (newNotifications.length > 0) {
-          console.log(`[toast trigger] dodajem ${newNotifications.length} notifikacija u snackPack`);
-          setSnackPack(prev => [...prev, ...newNotifications]);
-        }
-      }
-
-      const criticalByAgent = {};
-      for (const agent of agents) {
-        criticalByAgent[agent.id] = risks[agent.id]?.critical ?? 0;
-      }
-      prevCriticalRef.current = criticalByAgent;
-      hasLoadedRisksRef.current = true;
-    };
-
     if (agents.length > 0) fetchRisks();
   }, [agents]);
+
+  useEffect(() => {
+    if (!kolokvijumAktivan && agents.length > 0) fetchRisks();
+  }, [kolokvijumAktivan]);
 
   useEffect(() => {
     localStorage.setItem('dashboardViewMode', viewMode);
