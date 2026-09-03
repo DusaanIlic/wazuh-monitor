@@ -135,7 +135,7 @@ export default function AgentDetails() {
       const data = await getAgentAlerts(agentId, 1000, `${seconds}s`);
       const rowsData = data
         .map(a => ({ ...a, translated: translateAlert(a), isSystem: isSystemEvent(a) }))
-        .filter(a => !a.isSystem);
+        .filter(a => !a.isSystem && !a.rule?.groups?.includes('syscheck'));
 
       const datum = new Date().toISOString().slice(0, 10);
       const filename = `logovi_${agentName}_${datum}.csv`;

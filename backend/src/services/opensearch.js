@@ -196,10 +196,14 @@ async function searchAlertsForPeriod(startTime, endTime, agentId, limit = 5000) 
     must.push({ term: { 'agent.id': agentId } });
   }
 
+  const must_not = [
+    { terms: { 'rule.groups': ['syscheck', 'syscheck_file', 'syscheck_entry_added', 'syscheck_entry_modified', 'syscheck_entry_deleted'] } },
+  ];
+
   const query = {
     size: limit,
     sort: [{ timestamp: { order: 'asc' } }],
-    query: { bool: { must } },
+    query: { bool: { must, must_not } },
   };
 
   const response = await axios.post(
