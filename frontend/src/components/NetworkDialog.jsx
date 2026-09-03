@@ -6,6 +6,8 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import WifiIcon from '@mui/icons-material/Wifi';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import axios from 'axios';
 import { API_URL } from '../config';
 
@@ -72,8 +74,10 @@ function ProcessGroup({ processName, connections }) {
 }
 
 export default function NetworkDialog({ open, onClose, agentId }) {
-  const [groups, setGroups] = useState([]);
+  const [groupedProcesses, setGroupedProcesses] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(0);
+  const rowsPerPage = 5;
 
   useEffect(() => {
     if (open) {
@@ -95,7 +99,8 @@ export default function NetworkDialog({ open, onClose, agentId }) {
         if (!map[key]) map[key] = [];
         map[key].push(conn);
       }
-      setGroups(Object.entries(map));
+      setGroupedProcesses(Object.entries(map));
+      setPage(0);
     } catch {
       console.error('Greška pri dohvatanju portova');
     } finally {
@@ -103,7 +108,9 @@ export default function NetworkDialog({ open, onClose, agentId }) {
     }
   };
 
-  const totalConnections = groups.reduce((sum, [, conns]) => sum + conns.length, 0);
+  const totalConnections = groupedProcesses.reduce((sum, [, conns]) => sum + conns.length, 0);
+  const totalPages = Math.max(1, Math.ceil(groupedProcesses.length / rowsPerPage));
+  const paginatedGroups = groupedProcesses.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -111,22 +118,46 @@ export default function NetworkDialog({ open, onClose, agentId }) {
       <DialogContent>
         {loading && <Typography sx={{ mt: 1 }}>Učitavanje...</Typography>}
 
-        {!loading && groups.length === 0 && (
+        {!loading && groupedProcesses.length === 0 && (
           <Alert severity="success" sx={{ mt: 1 }}>
             Nisu detektovane sumnjive mrežne konekcije.
           </Alert>
         )}
 
-        {!loading && groups.length > 0 && (
+        {!loading && groupedProcesses.length > 0 && (
           <Box sx={{ mt: 1 }}>
             <Alert severity="error" sx={{ mb: 2 }}>
-              {groups.length === 1
+              {groupedProcesses.length === 1
                 ? `1 program pokušava da pristupi internetu (${totalConnections} konekcija).`
-                : `${groups.length} programa pokušavaju da pristupe internetu (${totalConnections} konekcija ukupno).`}
+                : `${groupedProcesses.length} programa pokušavaju da pristupe internetu (${totalConnections} konekcija ukupno).`}
             </Alert>
-            {groups.map(([processName, connections]) => (
+            {paginatedGroups.map(([processName, connections]) => (
               <ProcessGroup key={processName} processName={processName} connections={connections} />
             ))}
+
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, mt: 1 }}>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<ChevronLeftIcon />}
+                disabled={page === 0}
+                onClick={() => setPage(p => Math.max(0, p - 1))}
+              >
+                Prethodna
+              </Button>
+              <Typography variant="body2" color="text.secondary">
+                Stranica {page + 1} od {totalPages}
+              </Typography>
+              <Button
+                variant="outlined"
+                size="small"
+                endIcon={<ChevronRightIcon />}
+                disabled={page >= totalPages - 1}
+                onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+              >
+                Sledeća
+              </Button>
+            </Box>
           </Box>
         )}
       </DialogContent>
