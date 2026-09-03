@@ -49,7 +49,7 @@ async function getActiveAgents() {
   try {
     const data = await apiRequest('get', '/agents?status=active&limit=500');
     const agents = data?.data?.affected_items || [];
-    return agents.map(a => ({ id: a.id, name: a.name }));
+    return agents.filter(a => a.id !== '000').map(a => ({ id: a.id, name: a.name }));
   } catch (err) {
     console.error('[kolokvijum] greška pri dohvatanju agenata:', err.message);
     return [];
