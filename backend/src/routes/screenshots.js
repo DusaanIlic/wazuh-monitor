@@ -94,42 +94,4 @@ router.post('/trigger/:agentId', async (req, res) => {
   }
 });
 
-const recentAutoScreenshots = new Set();
-const AUTO_SCREENSHOT_COOLDOWN_MS = 5 * 60 * 1000;
-
-async function checkAndTriggerAutoScreenshots() {
-  try {
-    const { searchAlerts } = require('../services/opensearch');
-    const { apiRequest } = require('../services/wazuhApi');
-
-    const agentsData = await apiRequest('get', '/agents', { status: 'active' });
-    const agents = agentsData.data.affected_items.filter(a => a.id !== '000');
-
-    for (const agent of agents) {
-      if (recentAutoScreenshots.has(agent.id)) continue;
-
-      const alerts = await searchAlerts(agent.id, { timeRange: '5m', limit: 10 });
-
-      const hasCriticalAlert = alerts.some(a =>
-        a.rule?.level >= 10 || a.rule?.groups?.includes('usb')
-      );
-
-      if (hasCriticalAlert) {
-        console.log(`Automatski screenshot okinut za agenta ${agent.id} (${agent.name || ''})`);
-        recentAutoScreenshots.add(agent.id);
-        setTimeout(() => recentAutoScreenshots.delete(agent.id), AUTO_SCREENSHOT_COOLDOWN_MS);
-        try {
-          await takeScreenshot(agent.id);
-        } catch (err) {
-          console.error(`Automatski screenshot nije uspeo za agenta ${agent.id}:`, err.message);
-        }
-      }
-    }
-  } catch (err) {
-    console.error('Auto screenshot greška:', err.message);
-  }
-}
-
-setInterval(checkAndTriggerAutoScreenshots, 30000);
-
 module.exports = router;
