@@ -41,11 +41,11 @@ export default function ScreenshotDialog({ open, onClose, agentId }) {
     setTriggerError(null);
     try {
       await axios.post(`${API_URL}/api/screenshots/trigger/${agentId}`);
-      await fetchScreenshots();
     } catch (err) {
       setTriggerError(err.response?.data?.error || 'Greška pri pravljenju screenshot-a');
     } finally {
       setTriggering(false);
+      await fetchScreenshots();
     }
   };
 

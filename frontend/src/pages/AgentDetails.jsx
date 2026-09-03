@@ -4,7 +4,7 @@ import {
   Container, Typography, Box, Alert,
   Button, Paper, Chip, Divider, List, ListItem,
   ListItemIcon, ListItemText, TablePagination,
-  ToggleButton, ToggleButtonGroup
+  ToggleButton, ToggleButtonGroup, Tooltip
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
@@ -212,24 +212,33 @@ export default function AgentDetails() {
           Screenshots
         </Button>
 
-        <Button
-          variant="outlined"
-          startIcon={<NetworkCheckIcon />}
-          onClick={() => { fetchPorts(); setShowNetwork(true); }}
-          color="info"
-        >
-          Mreža
-        </Button>
+        <Tooltip title={!kolokvijumAktivan ? 'Pokrenite kolokvijum da biste videli mrežne konekcije' : ''}>
+          <span>
+            <Button
+              variant="outlined"
+              startIcon={<NetworkCheckIcon />}
+              onClick={() => { fetchPorts(); setShowNetwork(true); }}
+              color="info"
+              disabled={!kolokvijumAktivan}
+            >
+              Mreža
+            </Button>
+          </span>
+        </Tooltip>
 
-        <Button
-          variant="outlined"
-          startIcon={<DownloadIcon />}
-          onClick={downloadLogs}
-          color="success"
-          disabled={!kolokvijumAktivan || !kolokvijum?.startTime}
-        >
-          Preuzmi logove
-        </Button>
+        <Tooltip title={!kolokvijumAktivan ? 'Pokrenite kolokvijum' : ''}>
+          <span>
+            <Button
+              variant="outlined"
+              startIcon={<DownloadIcon />}
+              onClick={downloadLogs}
+              color="success"
+              disabled={!kolokvijumAktivan || !kolokvijum?.startTime}
+            >
+              Preuzmi logove
+            </Button>
+          </span>
+        </Tooltip>
 
         <Button
           variant="outlined"
