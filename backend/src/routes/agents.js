@@ -39,8 +39,8 @@ router.get('/:agentId/risk', async (req, res) => {
       return res.json({ data: { risk: 'ok', critical: 0, warning: 0, total: 0 } });
     }
 
-    // Dohvati alerte poslednjih sat vremena
-    const alerts = await searchAlerts(agentId, { limit: 50 });
+    // Dohvati alerte od početka kolokvijuma
+    const alerts = await searchAlerts(agentId, { limit: 50, from: state.startTime });
 
     const isUsbAlert = (a) =>
       a.rule?.groups?.includes('usb') ||
