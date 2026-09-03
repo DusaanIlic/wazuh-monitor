@@ -29,6 +29,21 @@ const severityIcon = {
   info: <InfoIcon color="info" />,
 };
 
+const DEDUP_WINDOW_MS = 5000;
+
+function dedupeAlerts(list) {
+  const kept = [];
+  for (const alert of list) {
+    const time = new Date(alert.timestamp).getTime();
+    const isDuplicate = kept.some(existing =>
+      existing.translated.msg === alert.translated.msg &&
+      Math.abs(time - new Date(existing.timestamp).getTime()) < DEDUP_WINDOW_MS
+    );
+    if (!isDuplicate) kept.push(alert);
+  }
+  return kept;
+}
+
 export default function AgentDetails() {
   const { agentId } = useParams()
   const [agentName, setAgentName] = useState(agentId);;
@@ -105,7 +120,7 @@ export default function AgentDetails() {
     fetchAgentName();
   }, [agentId]);
 
-  const filtered = alerts.filter(a => !a.isSystem);
+  const filtered = dedupeAlerts(alerts.filter(a => !a.isSystem));
 
   const fetchScreenshots = async () => {
     try {
