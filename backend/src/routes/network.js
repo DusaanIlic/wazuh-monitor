@@ -9,6 +9,15 @@ router.get('/:agentId/ports', async (req, res) => {
       limit: 100,
       sort: '-remote_ip'
     });
+
+    if (data?.data?.affected_items) {
+      data.data.affected_items = data.data.affected_items.filter(p =>
+        (p.state === 'established' || p.state === 'listening') &&
+        p.process &&
+        p.process !== 'System'
+      );
+    }
+
     res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });

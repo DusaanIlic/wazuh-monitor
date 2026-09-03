@@ -75,18 +75,6 @@ export default function NetworkDialog({ open, onClose, agentId }) {
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const isLocalIP = (ip) => {
-    if (!ip) return true;
-    return (
-      ip.startsWith('192.168.') ||
-      ip.startsWith('10.') ||
-      ip.startsWith('172.') ||
-      ip === '0.0.0.0' ||
-      ip === '::' ||
-      ip === '127.0.0.1'
-    );
-  };
-
   useEffect(() => {
     if (open) {
       fetchPorts();
@@ -98,13 +86,11 @@ export default function NetworkDialog({ open, onClose, agentId }) {
     try {
       const res = await axios.get(`${API_URL}/api/network/${agentId}/ports`);
       const items = res.data.data.affected_items || [];
-      const suspicious = items.filter(p =>
-        p.remote?.ip && p.state === 'established' && !isLocalIP(p.remote.ip)
-      );
+      const withProcess = items.filter(p => p.process && p.process.trim() !== '');
 
       // Grupiši po nazivu procesa
       const map = {};
-      for (const conn of suspicious) {
+      for (const conn of withProcess) {
         const key = conn.process || '(nepoznato)';
         if (!map[key]) map[key] = [];
         map[key].push(conn);

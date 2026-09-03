@@ -188,25 +188,10 @@ export default function AgentDetails() {
     try {
       const res = await axios.get(`${API_URL}/api/network/${agentId}/ports`);
       const items = res.data.data.affected_items || [];
-      
-      const isLocalIP = (ip) => {
-        if (!ip) return true;
-        return ip.startsWith('192.168.') || 
-               ip.startsWith('10.') || 
-               ip.startsWith('172.') ||
-               ip === '0.0.0.0' ||
-               ip === '::' ||
-               ip === '127.0.0.1';
-      };
-  
-      // Samo established konekcije ka spoljnim IP-ovima
-      const suspicious = items.filter(p => 
-        p.remote?.ip && 
-        p.state === 'established' &&
-        !isLocalIP(p.remote.ip)
-      );
-      
-      setPorts(suspicious);
+
+      const withProcess = items.filter(p => p.process && p.process.trim() !== '');
+
+      setPorts(withProcess);
     } catch (err) {
       console.error('Greška');
     }
