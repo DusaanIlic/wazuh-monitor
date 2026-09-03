@@ -135,7 +135,8 @@ router.get('/historija/:id/logovi', async (req, res) => {
       return res.status(404).json({ error: 'Kolokvijum nije pronađen' });
     }
 
-    const alerts = await searchAlertsForPeriod(record.startTime, record.endTime, agentId);
+    const alerts = (await searchAlertsForPeriod(record.startTime, record.endTime, agentId))
+      .filter(a => a.agent?.id !== '000' && a.agent?.name?.toLowerCase() !== 'wazuh');
 
     const header = ['Vreme', 'Racunar', 'Tip', 'Opis', 'Korisnik'];
     const rows = alerts.map(a => [

@@ -4,6 +4,8 @@ import {
   Box, Typography, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Paper, Button, Modal, Chip, CircularProgress, IconButton,
 } from '@mui/material';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import HistoryIcon from '@mui/icons-material/History';
 import ComputerIcon from '@mui/icons-material/Computer';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -44,13 +46,18 @@ export default function IstorijaPage() {
   const [loading, setLoading] = useState(true);
   const [greska, setGreska] = useState(null);
   const [modalKolokvijum, setModalKolokvijum] = useState(null);
+  const [page, setPage] = useState(0);
+  const rowsPerPage = 5;
 
   useEffect(() => {
     getIstorijaKolokvijuma()
-      .then(setIstorija)
+      .then(data => { setIstorija(data); setPage(0); })
       .catch(err => setGreska(err.message))
       .finally(() => setLoading(false));
   }, []);
+
+  const totalPages = Math.max(1, Math.ceil(istorija.length / rowsPerPage));
+  const paginated = istorija.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   const preuzmiLogove = (id, agentId) => {
     window.open(getKolokvijumLogoviUrl(id, agentId), '_blank');
@@ -101,7 +108,7 @@ export default function IstorijaPage() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {istorija.map((k, i) => (
+              {paginated.map((k, i) => (
                 <TableRow key={k.id || i} hover>
                   <TableCell>{formatDatum(k.startTime)}</TableCell>
                   <TableCell>
@@ -133,6 +140,32 @@ export default function IstorijaPage() {
             </TableBody>
           </Table>
         </TableContainer>
+      )}
+
+      {!loading && !greska && istorija.length > 0 && (
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, mt: 2 }}>
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<ChevronLeftIcon />}
+            disabled={page === 0}
+            onClick={() => setPage(p => Math.max(0, p - 1))}
+          >
+            Prethodna
+          </Button>
+          <Typography variant="body2" color="text.secondary">
+            Stranica {page + 1} od {totalPages}
+          </Typography>
+          <Button
+            variant="outlined"
+            size="small"
+            endIcon={<ChevronRightIcon />}
+            disabled={page >= totalPages - 1}
+            onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+          >
+            Sledeća
+          </Button>
+        </Box>
       )}
 
       <Modal open={!!modalKolokvijum} onClose={() => setModalKolokvijum(null)}>
