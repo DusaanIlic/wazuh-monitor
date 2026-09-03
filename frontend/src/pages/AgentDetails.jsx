@@ -192,7 +192,7 @@ export default function AgentDetails() {
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Box display="flex" gap={2} alignItems="center">
+      <Box sx={{ display: 'flex', gap: 2, mb: 2 }} alignItems="center">
         <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/')}>
           Nazad na pregled
         </Button>
