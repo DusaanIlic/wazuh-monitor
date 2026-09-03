@@ -213,6 +213,11 @@ export default function Dashboard({ kolokvijumAktivan, onStartKolokvijum, onStop
     if (!kolokvijumAktivan && agents.length > 0) fetchRisks();
   }, [kolokvijumAktivan]);
 
+  // Osveži badge indikatore odmah pri mount-u komponente (npr. povratak na dashboard)
+  useEffect(() => {
+    fetchRisks();
+  }, []);
+
   useEffect(() => {
     localStorage.setItem('dashboardViewMode', viewMode);
   }, [viewMode]);
