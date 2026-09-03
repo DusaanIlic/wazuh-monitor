@@ -30,7 +30,7 @@ router.get('/list/:agentId', (req, res) => {
   const { agentId } = req.params;
   try {
     const files = fs.readdirSync(screenshotDir)
-      .filter(f => f.startsWith(agentId))
+      .filter(f => f.startsWith(`${agentId}_`))
       .map(f => {
         const stats = fs.statSync(path.join(screenshotDir, f));
         return { filename: f, timestamp: stats.mtime, url: `/api/screenshots/view/${f}` };

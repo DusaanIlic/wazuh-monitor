@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Dialog, DialogTitle, DialogContent, Box, Typography,
   Button, CircularProgress, Alert, IconButton
@@ -9,17 +9,24 @@ import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import axios from 'axios';
 import { API_URL } from '../config';
 
-export default function ScreenshotDialog({ open, onClose, agentId }) {
+const POLL_INTERVAL_MS = 2000;
+const MAX_POLL_ATTEMPTS = 10;
+
+export default function ScreenshotDialog({ open, onClose, agentId, kolokvijumAktivan }) {
   const [screenshots, setScreenshots] = useState([]);
   const [triggering, setTriggering] = useState(false);
   const [loading, setLoading] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [triggerError, setTriggerError] = useState(null);
+  const pollTokenRef = useRef(0);
 
   useEffect(() => {
     if (open) {
       setTriggerError(null);
       fetchScreenshots();
+    } else {
+      // Poništi svako polling-a koje je u toku ako se dijalog zatvori
+      pollTokenRef.current++;
     }
   }, [open]);
 
@@ -27,10 +34,13 @@ export default function ScreenshotDialog({ open, onClose, agentId }) {
     setLoading(true);
     try {
       const res = await axios.get(`${API_URL}/api/screenshots/list/${agentId}`);
-      setScreenshots(res.data.data);
+      const data = res.data.data;
+      setScreenshots(data);
       setCurrentIndex(0);
+      return data;
     } catch {
       console.error('Greška pri dohvatanju screenshotova');
+      return null;
     } finally {
       setLoading(false);
     }
@@ -39,13 +49,31 @@ export default function ScreenshotDialog({ open, onClose, agentId }) {
   const triggerScreenshot = async () => {
     setTriggering(true);
     setTriggerError(null);
+    const previousCount = screenshots.length;
+    const token = pollTokenRef.current;
+
     try {
       await axios.post(`${API_URL}/api/screenshots/trigger/${agentId}`);
     } catch (err) {
       setTriggerError(err.response?.data?.error || 'Greška pri pravljenju screenshot-a');
-    } finally {
       setTriggering(false);
       await fetchScreenshots();
+      return;
+    }
+
+    setTriggering(false);
+
+    // Watcher na agentu asinhrono pravi screenshot — pollujemo listu dok se ne pojavi novi
+    for (let attempt = 0; attempt < MAX_POLL_ATTEMPTS; attempt++) {
+      await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL_MS));
+      if (pollTokenRef.current !== token) return;
+
+      const data = await fetchScreenshots();
+      if (pollTokenRef.current !== token) return;
+
+      if (data && data.length > previousCount) {
+        break;
+      }
     }
   };
 
@@ -60,7 +88,7 @@ export default function ScreenshotDialog({ open, onClose, agentId }) {
             variant="outlined"
             startIcon={triggering ? <CircularProgress size={16} /> : <CameraAltIcon />}
             onClick={triggerScreenshot}
-            disabled={triggering}
+            disabled={triggering || !kolokvijumAktivan}
             size="small"
           >
             {triggering ? 'Čekanje...' : 'Napravi screenshot'}

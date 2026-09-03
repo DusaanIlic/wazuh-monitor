@@ -373,6 +373,7 @@ export default function AgentDetails() {
         open={screenshotDialog}
         onClose={() => setScreenshotDialog(false)}
         agentId={agentId}
+        kolokvijumAktivan={kolokvijumAktivan}
       />
 
       <NetworkDialog
