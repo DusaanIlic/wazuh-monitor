@@ -69,19 +69,10 @@ export default function AgentDetails() {
         const status = await getKolokvijumStatus();
         setKolokvijum(status);
 
-        // Kada je kolokvijum aktivan, koristi njegov startTime kao donju granicu
-        // (prosleđuje se kao timeRange parametar u obliku "<sekunde>s", jer /events/:agentId/alerts
-        // podržava samo relativni ES date-math opseg, ne apsolutni "from" datum).
-        let effectiveTimeRange = timeRange;
-        if (status?.isActive && status?.startTime) {
-          const elapsedSeconds = Math.max(
-            1,
-            Math.ceil((Date.now() - new Date(status.startTime).getTime()) / 1000)
-          );
-          effectiveTimeRange = `${elapsedSeconds}s`;
-        }
+        // Kada je kolokvijum aktivan, koristi njegov startTime kao apsolutnu donju granicu ('from')
+        const from = status?.isActive && status?.startTime ? status.startTime : null;
 
-        const data = await getAgentAlerts(agentId, 200, effectiveTimeRange);
+        const data = await getAgentAlerts(agentId, 200, timeRange, from);
         console.log('Alerte dobijene:', data);
         const translated = data.map(a => ({
           ...a,
@@ -143,8 +134,7 @@ export default function AgentDetails() {
     if (!kolokvijumAktivan || !kolokvijum?.startTime) return;
 
     try {
-      const seconds = Math.max(1, Math.ceil((Date.now() - new Date(kolokvijum.startTime).getTime()) / 1000));
-      const data = await getAgentAlerts(agentId, 1000, `${seconds}s`);
+      const data = await getAgentAlerts(agentId, 1000, timeRange, kolokvijum.startTime);
       const isNoiseAlert = (a) => {
         const msg = a.translated?.msg || '';
         return msg.includes('Summary event') || msg.includes('report signatures') || msg.includes('Kaspersky');

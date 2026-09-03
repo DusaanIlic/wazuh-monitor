@@ -17,8 +17,8 @@ router.get('/:agentId', async (req, res) => {
 router.get('/:agentId/alerts', async (req, res) => {
   try {
     const { agentId } = req.params;
-    const { limit = 100, username, timeRange = '24h' } = req.query;
-    const data = await searchAlerts(agentId, { limit, username, timeRange });
+    const { limit = 100, username, timeRange = '24h', from } = req.query;
+    const data = await searchAlerts(agentId, { limit, username, timeRange, from });
     res.json({ data });
   } catch (err) {
     res.status(500).json({ error: err.message });

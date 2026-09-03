@@ -10,8 +10,10 @@ export const getAgents = async () => {
   return res.data.data.affected_items;
 };
 
-export const getAgentAlerts = async (agentId, limit = 100, timeRange = '24h') => {
-  const res = await api.get(`/events/${agentId}/alerts?limit=${limit}&timeRange=${timeRange}`);
+export const getAgentAlerts = async (agentId, limit = 100, timeRange = '24h', from = null) => {
+  const params = { limit, timeRange };
+  if (from) params.from = from;
+  const res = await api.get(`/events/${agentId}/alerts`, { params });
   return res.data.data;
 };
 
