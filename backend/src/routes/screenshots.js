@@ -2,33 +2,14 @@ const express = require('express');
 const router = express.Router();
 const path = require('path');
 const fs = require('fs');
-const { execFile } = require('child_process');
+const { apiRequest } = require('../services/wazuhApi');
 
 const screenshotDir = path.join(__dirname, '../../screenshots');
 if (!fs.existsSync(screenshotDir)) {
   fs.mkdirSync(screenshotDir, { recursive: true });
 }
 
-const screenshotScript = path.join(__dirname, '../../../scripts/take-screenshot.ps1');
-
-function takeScreenshot(agentId) {
-  return new Promise((resolve, reject) => {
-    const filename = `${agentId}_${Date.now()}.png`;
-    const outputPath = path.join(screenshotDir, filename);
-
-    execFile(
-      'powershell.exe',
-      ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', screenshotScript, '-OutputPath', outputPath],
-      { timeout: 8000 },
-      (err) => {
-        if (err || !fs.existsSync(outputPath)) {
-          return reject(err || new Error('Screenshot fajl nije kreiran'));
-        }
-        resolve(filename);
-      }
-    );
-  });
-}
+const pendingScreenshots = new Set();
 
 router.post('/upload/:agentId', (req, res) => {
   try {
@@ -69,10 +50,16 @@ router.get('/view/:filename', (req, res) => {
   res.sendFile(filePath);
 });
 
+router.get('/pending/:agentId', (req, res) => {
+  const { agentId } = req.params;
+  const pending = pendingScreenshots.has(agentId);
+  if (pending) pendingScreenshots.delete(agentId);
+  res.json({ pending });
+});
+
 router.post('/trigger/:agentId', async (req, res) => {
   try {
     const { agentId } = req.params;
-    const { apiRequest } = require('../services/wazuhApi');
 
     const agentsData = await apiRequest('get', '/agents', {}, { agents_list: agentId });
     const agent = agentsData.data.affected_items?.[0];
@@ -81,14 +68,8 @@ router.post('/trigger/:agentId', async (req, res) => {
       return res.status(404).json({ error: `Agent ${agentId} nije pronađen` });
     }
 
-    try {
-      const filename = await takeScreenshot(agentId);
-      console.log(`Screenshot napravljen za agenta ${agentId}: ${filename}`);
-      res.json({ success: true, filename, url: `/api/screenshots/view/${filename}` });
-    } catch (err) {
-      console.error(`Screenshot nije uspeo za agenta ${agentId}:`, err.message);
-      res.status(500).json({ error: `Screenshot nije uspeo za agenta ${agentId}: ${err.message}` });
-    }
+    pendingScreenshots.add(agentId);
+    res.json({ success: true, message: 'Zahtev kreiran, čeka se watcher' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
