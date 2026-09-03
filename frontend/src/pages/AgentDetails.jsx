@@ -11,15 +11,25 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import ErrorIcon from '@mui/icons-material/Error';
 import InfoIcon from '@mui/icons-material/Info';
 import PersonIcon from '@mui/icons-material/Person';
-import { getAgentAlerts, getKolokvijumStatus } from '../services/api';
+import { getAgentAlerts, getKolokvijumStatus, getIstorijaKolokvijuma, getKolokvijumLogoviUrl } from '../services/api';
 import { translateAlert, severityConfig, isSystemEvent } from '../utils/eventTranslator';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import NetworkCheckIcon from '@mui/icons-material/NetworkCheck';
 import DownloadIcon from '@mui/icons-material/Download';
+import HistoryIcon from '@mui/icons-material/History';
 import axios from 'axios'
 import ScreenshotDialog from '../components/ScreenshotDialog';
 import NetworkDialog from '../components/NetworkDialog';
 import { API_URL } from '../config';
+
+function formatDatum(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleString('sr-RS', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  }).replace(',', '.');
+}
 
 const severityIcon = {
   critical: <ErrorIcon color="error" />,
@@ -47,6 +57,7 @@ export default function AgentDetails() {
   const [kolokvijumAktivan, setKolokvijumAktivan] = useState(
     () => localStorage.getItem('kolokvijumAktivan') === 'true'
   );
+  const [istorijaKolokvijuma, setIstorijaKolokvijuma] = useState([]);
 
   useEffect(() => {
     const aktivan = localStorage.getItem('kolokvijumAktivan') === 'true';
@@ -99,6 +110,18 @@ export default function AgentDetails() {
     fetchAgentName();
   }, [agentId]);
 
+  useEffect(() => {
+    const fetchIstorija = async () => {
+      try {
+        const data = await getIstorijaKolokvijuma();
+        setIstorijaKolokvijuma(data.filter(k => k.agents?.some(a => a.id === agentId)));
+      } catch (err) {
+        console.error('Greška pri dohvatanju istorije kolokvijuma');
+      }
+    };
+    fetchIstorija();
+  }, [agentId]);
+
   const filtered = alerts.filter(a => !a.isSystem);
   const criticalCount = filtered.filter(e => e.translated.severity === 'critical').length;
   const warningCount = filtered.filter(e => e.translated.severity === 'warning').length;
@@ -147,6 +170,10 @@ export default function AgentDetails() {
     a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const preuzmiLogoveKolokvijuma = (id) => {
+    window.open(getKolokvijumLogoviUrl(id, agentId), '_blank');
   };
 
   const fetchPorts = async () => {
@@ -212,7 +239,41 @@ export default function AgentDetails() {
         </Button>
       </Box>
 
-   
+      {istorijaKolokvijuma.length > 0 && (
+        <Paper sx={{ mt: 2, p: 2 }}>
+          <Box display="flex" alignItems="center" gap={1} mb={1}>
+            <HistoryIcon sx={{ color: '#1565c0' }} />
+            <Typography variant="h6" fontWeight="bold">
+              Istorija kolokvijuma
+            </Typography>
+          </Box>
+          <List disablePadding>
+            {istorijaKolokvijuma.map((k, i) => (
+              <Box key={k.id}>
+                <ListItem
+                  sx={{ px: 0 }}
+                  secondaryAction={
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={<DownloadIcon />}
+                      onClick={() => preuzmiLogoveKolokvijuma(k.id)}
+                    >
+                      Preuzmi logove
+                    </Button>
+                  }
+                >
+                  <ListItemText
+                    primary={formatDatum(k.startTime)}
+                    secondary={`Trajanje: ${k.trajanje ?? 0} min`}
+                  />
+                </ListItem>
+                {i < istorijaKolokvijuma.length - 1 && <Divider />}
+              </Box>
+            ))}
+          </List>
+        </Paper>
+      )}
 
       <Box display="flex" flexDirection="row" justifyContent="space-between" alignItems="center" mb={2} mt={2}>
         <Box>
