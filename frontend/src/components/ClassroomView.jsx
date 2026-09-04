@@ -49,8 +49,8 @@ function AgentSlot({ agent, onAgentClick, isTeacher }) {
         variant="outlined"
         sx={{
           aspectRatio: '1',
-          minWidth: 150,
-          minHeight: 150,
+          minWidth: 180,
+          minHeight: 180,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -112,8 +112,8 @@ function AgentSlot({ agent, onAgentClick, isTeacher }) {
         onClick={() => onAgentClick?.(agent)}
         sx={{
           aspectRatio: '1',
-          minWidth: 150,
-          minHeight: 150,
+          minWidth: 180,
+          minHeight: 180,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -188,7 +188,7 @@ export default function ClassroomView({ agents = [], onAgentClick }) {
         gridTemplateColumns: 'repeat(5, 1fr)',
         gap: 2,
         p: 2,
-        maxWidth: 900,
+        maxWidth: 1100,
       }}
     >
       {slots.map((agent, i) => (
